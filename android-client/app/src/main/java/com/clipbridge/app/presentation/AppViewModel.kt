@@ -27,7 +27,7 @@ data class AppUiState(
     val connection: String = "未连接",
     val error: String? = null,
     val devices: List<Device> = emptyList(),
-    val selectedDeviceId: String? = null,
+    val selectedDeviceIds: Set<String> = emptySet(),
     val pendingText: String = "",
     val clipboardMode: String = PrivilegedClipboardState.ADB_STOPPED.label,
     val themeColor: String = "blue",
@@ -78,12 +78,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                         )
                     }
                     "device_revoked" -> {
-                        val selectedWasRevoked = _state.value.selectedDeviceId == deviceId
-                        if (selectedWasRevoked) container.settings.selectedDeviceId = null
+                        val ids = container.settings.selectedDeviceIds - deviceId
+                        container.settings.selectedDeviceIds = ids
                         _state.value = _state.value.copy(
                             devices = _state.value.devices.filterNot { it.id == deviceId },
-                            selectedDeviceId = if (selectedWasRevoked) null
-                            else _state.value.selectedDeviceId,
+                            selectedDeviceIds = ids,
                         )
                     }
                 }
@@ -130,22 +129,23 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                     val self = container.auth.deviceIdentity().deviceId
                     val peers = devices.filter { it.id != self && !it.revoked }
                     container.sync.updateDevices(peers)
-                    val selected = _state.value.selectedDeviceId
-                        ?: container.settings.selectedDeviceId
-                        ?: peers.firstOrNull()?.id
-                    selected?.let(container.sync::selectTarget)
+                    val selected = container.settings.selectedDeviceIds.ifEmpty {
+                        peers.firstOrNull()?.id?.let { setOf(it) } ?: emptySet()
+                    }
+                    selected.forEach { container.sync.toggleTarget(it) }
                     _state.value = _state.value.copy(
                         devices = peers,
-                        selectedDeviceId = selected,
+                        selectedDeviceIds = selected,
                     )
                 }
                 .onFailure { _state.value = _state.value.copy(error = it.message) }
         }
     }
 
-    fun selectDevice(id: String) {
-        container.sync.selectTarget(id)
-        _state.value = _state.value.copy(selectedDeviceId = id)
+    fun toggleDevice(id: String) {
+        container.sync.toggleTarget(id)
+        val updated = container.settings.selectedDeviceIds
+        _state.value = _state.value.copy(selectedDeviceIds = updated)
     }
 
     fun sendCurrentClipboard() {
@@ -167,7 +167,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             _state.value = _state.value.copy(error = "请输入要发送的文字")
             return
         }
-        if (_state.value.selectedDeviceId == null) {
+        if (_state.value.selectedDeviceIds.isEmpty()) {
             _state.value = _state.value.copy(error = "请先选择接收设备")
             return
         }

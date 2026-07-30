@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -433,47 +434,122 @@ private fun AuthScreen(
 
 @Composable
 private fun HomeScreen(state: AppUiState, viewModel: AppViewModel) {
-    val selected = state.devices.firstOrNull { it.id == state.selectedDeviceId }
     val connected = state.connection == "已连接"
-    val privileged = state.clipboardMode.contains("已启用")
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 22.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        item {
-            SectionTitle("运行状态", "显示来自中继服务器和已配对设备的实时状态")
+    val onlineDevices = state.devices.filter { it.online && !it.revoked }
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 18.dp, vertical = 22.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            item {
+                SectionTitle("服务器状态", "")
+            }
+            item {
+                ElevatedCard(
+                    shape = RoundedCornerShape(12.dp),
+                    elevation = CardDefaults.elevatedCardElevation(1.dp),
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(18.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(12.dp)
+                                .background(
+                                    if (connected) Color(0xFF4CAF50) else Color(0xFFBDBDBD),
+                                    CircleShape,
+                                ),
+                        )
+                        Spacer(Modifier.width(14.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                if (connected) "已连接" else state.connection,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            Text(
+                                "WSS 加密通道",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+            }
+            item { SectionTitle("在线设备", "") }
+            if (onlineDevices.isEmpty()) {
+                item {
+                    Text(
+                        "暂无在线设备",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(vertical = 8.dp),
+                    )
+                }
+            } else {
+                items(onlineDevices, key = { it.id }) { device ->
+                    val selected = device.id in state.selectedDeviceIds
+                    ElevatedCard(
+                        shape = RoundedCornerShape(12.dp),
+                        elevation = CardDefaults.elevatedCardElevation(1.dp),
+                        colors = if (selected) CardDefaults.elevatedCardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        ) else CardDefaults.elevatedCardColors(),
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { viewModel.toggleDevice(device.id) }
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                Icons.Rounded.Devices,
+                                contentDescription = null,
+                                tint = if (selected) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Text(
+                                device.name,
+                                modifier = Modifier.weight(1f),
+                                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                            )
+                            if (selected) {
+                                Icon(
+                                    Icons.Rounded.CheckCircle,
+                                    contentDescription = "已选中",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp),
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            item { Spacer(Modifier.height(72.dp)) }
         }
-        item {
-            RuntimeStatusCard(
-                icon = Icons.Rounded.CloudDone,
-                title = "中继服务器",
-                status = if (connected) "已连接" else state.connection,
-                detail = "WSS 加密通道",
-                healthy = connected,
+        FilledTonalButton(
+            onClick = {
+                if (connected) viewModel.disconnect() else viewModel.reconnect()
+            },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(18.dp),
+            colors = ButtonDefaults.filledTonalButtonColors(
+                containerColor = if (connected)
+                    MaterialTheme.colorScheme.errorContainer
+                else
+                    MaterialTheme.colorScheme.primaryContainer,
+            ),
+        ) {
+            Icon(
+                if (connected) Icons.Rounded.Sync else Icons.Rounded.Refresh,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
             )
-        }
-        item {
-            RuntimeStatusCard(
-                icon = Icons.Rounded.Computer,
-                title = "电脑端",
-                status = when {
-                    selected == null -> "未选择设备"
-                    selected.online -> "在线"
-                    else -> "离线"
-                },
-                detail = selected?.name ?: "请在设备页选择接收电脑",
-                healthy = selected?.online == true,
-            )
-        }
-        item {
-            RuntimeStatusCard(
-                icon = Icons.Rounded.Smartphone,
-                title = "手机端",
-                status = if (privileged) "后台互通已启用" else "仅前台可用",
-                detail = "${viewModel.deviceName()} · ${state.clipboardMode}",
-                healthy = privileged,
-            )
+            Spacer(Modifier.width(8.dp))
+            Text(if (connected) "断开" else "连接")
         }
     }
 }
@@ -564,8 +640,6 @@ private fun SectionTitle(title: String, subtitle: String) {
 @Composable
 private fun DevicesScreen(state: AppUiState, viewModel: AppViewModel) {
     LaunchedEffect(Unit) { viewModel.refreshDevices() }
-    val phoneDevices = state.devices.filter { it.platform.contains("android", true) }
-    val computerDevices = state.devices.filterNot { it.platform.contains("android", true) }
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(18.dp),
@@ -578,8 +652,8 @@ private fun DevicesScreen(state: AppUiState, viewModel: AppViewModel) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 SectionTitle(
-                    "同账号设备",
-                    "共 ${state.devices.size} 台其他设备；手机和电脑都可以作为接收目标",
+                    "在线设备",
+                    "共 ${state.devices.size} 台，点击选择接收目标（可多选）",
                 )
                 IconButton(onClick = viewModel::refreshDevices) {
                     Icon(Icons.Rounded.Refresh, contentDescription = "刷新设备")
@@ -597,30 +671,17 @@ private fun DevicesScreen(state: AppUiState, viewModel: AppViewModel) {
                 )
             }
         } else {
-            if (phoneDevices.isNotEmpty()) {
-                item { SectionTitle("手机设备", "${phoneDevices.size} 台") }
-            }
-            items(phoneDevices, key = Device::id) { device ->
+            items(state.devices, key = Device::id) { device ->
                 DeviceCard(
                     device = device,
-                    selected = state.selectedDeviceId == device.id,
-                    onClick = { viewModel.selectDevice(device.id) },
-                )
-            }
-            if (computerDevices.isNotEmpty()) {
-                item { SectionTitle("电脑设备", "${computerDevices.size} 台") }
-            }
-            items(computerDevices, key = Device::id) { device ->
-                DeviceCard(
-                    device = device,
-                    selected = state.selectedDeviceId == device.id,
-                    onClick = { viewModel.selectDevice(device.id) },
+                    selected = device.id in state.selectedDeviceIds,
+                    onClick = { viewModel.toggleDevice(device.id) },
                 )
             }
         }
         item {
             Spacer(Modifier.height(4.dp))
-            SectionTitle("发送文字", "内容会端到端加密，并写入所选设备的剪贴板")
+            SectionTitle("发送文字", "端到端加密，同时发送到所有选中设备")
             Spacer(Modifier.height(10.dp))
             ElevatedCard(
                 shape = RoundedCornerShape(12.dp),
@@ -641,7 +702,7 @@ private fun DevicesScreen(state: AppUiState, viewModel: AppViewModel) {
                     Button(
                         onClick = viewModel::sendPendingText,
                         enabled = state.pendingText.isNotBlank() &&
-                            state.selectedDeviceId != null &&
+                            state.selectedDeviceIds.isNotEmpty() &&
                             !state.sendingText,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -653,7 +714,7 @@ private fun DevicesScreen(state: AppUiState, viewModel: AppViewModel) {
                         } else {
                             Icon(Icons.AutoMirrored.Rounded.Send, contentDescription = null)
                             Spacer(Modifier.size(8.dp))
-                            Text("发送并复制到所选设备")
+                            Text("发送到 ${state.selectedDeviceIds.size} 台设备")
                         }
                     }
                 }

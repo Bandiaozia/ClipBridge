@@ -54,8 +54,10 @@ class ClipboardSyncCoordinator(
         devices.value = value.filterNot(Device::revoked)
     }
 
-    fun selectTarget(id: String) {
-        settings.selectedDeviceId = id
+    fun toggleTarget(id: String) {
+        val current = settings.selectedDeviceIds.toMutableSet()
+        if (id in current) current.remove(id) else current.add(id)
+        settings.selectedDeviceIds = current
     }
 
     suspend fun sendText(text: String): String? {
@@ -64,34 +66,33 @@ class ClipboardSyncCoordinator(
             _status.value = "检测到疑似敏感内容：${reasons.joinToString("、")}，已阻止自动发送"
             return null
         }
-        val target = devices.value.firstOrNull { it.id == settings.selectedDeviceId }
-        if (target == null) {
-            _status.value = "请先选择已配对设备"
+        val targets = devices.value.filter { it.id in settings.selectedDeviceIds }
+        if (targets.isEmpty()) {
+            _status.value = "请先选择接收设备"
             return null
         }
-        return runCatching {
-            val envelope = crypto.encrypt(text, target)
-            history.insert(
-                HistoryEntity(
-                    messageId = envelope.messageId,
-                    content = text,
-                    contentHash = CryptoEngine.sha256(text.toByteArray())
-                        .joinToString("") { "%02x".format(it) },
-                    sourceDevice = envelope.senderDeviceId,
-                    targetDevice = envelope.recipientDeviceId,
-                    createdAt = envelope.createdAt,
-                    receivedAt = envelope.createdAt,
-                    local = true,
-                ),
-            )
-            remember(envelope.messageId)
-            webSocket.send(envelope)
-            envelope.messageId
-        }.onSuccess {
-            _status.value = null
-        }.onFailure {
-            _status.value = it.message
-        }.getOrNull()
+        targets.forEach { target ->
+            runCatching {
+                val envelope = crypto.encrypt(text, target)
+                history.insert(
+                    HistoryEntity(
+                        messageId = envelope.messageId,
+                        content = text,
+                        contentHash = CryptoEngine.sha256(text.toByteArray())
+                            .joinToString("") { "%02x".format(it) },
+                        sourceDevice = envelope.senderDeviceId,
+                        targetDevice = envelope.recipientDeviceId,
+                        createdAt = envelope.createdAt,
+                        receivedAt = envelope.createdAt,
+                        local = true,
+                    ),
+                )
+                remember(envelope.messageId)
+                webSocket.send(envelope)
+            }
+        }
+        _status.value = null
+        return null
     }
 
     private suspend fun receive(frame: JSONObject) {

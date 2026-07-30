@@ -34,12 +34,15 @@ class SettingsStore(context: Context) {
         set(value) = preferences.edit().putInt("max_history", value.coerceIn(10, 100_000)).apply()
 
     var retentionDays: Int
-        get() = preferences.getInt("retention_days", 30)
+        get() = preferences.getInt("retention_days", 1)
         set(value) = preferences.edit().putInt("retention_days", value.coerceIn(1, 3650)).apply()
 
-    var selectedDeviceId: String?
-        get() = preferences.getString("selected_device_id", null)
-        set(value) = preferences.edit().putString("selected_device_id", value).apply()
+    var selectedDeviceIds: Set<String>
+        get() = preferences.getString("selected_device_ids", "")
+            ?.takeIf { it.isNotEmpty() }
+            ?.split(",")
+            ?.toSet() ?: emptySet()
+        set(value) = preferences.edit().putString("selected_device_ids", value.joinToString(",")).apply()
 
     /**
      * 只保存稳定的主题标识，不保存具体色值。这样后续微调配色时，用户的选择仍然有效。
