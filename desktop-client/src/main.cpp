@@ -102,10 +102,10 @@ int main(int argc, char *argv[]) {
                          }
                      });
 
-    // Mutter 在尝试装饰 Qt 窗口时存在 bug，会将窗口立即最小化后取消映射。
-    // 使用无边框窗口绕过 Mutter 装饰逻辑，但仍为受管窗口。
+    // 某些 Mutter 版本（如 46.2-1ubuntu0.24.04.16）存在 SSD bug，
+    // 会立即取消映射服务端装饰窗口。设置此变量启用无边框 workaround。
 #if defined(Q_OS_LINUX)
-    if (!qEnvironmentVariableIsSet("CLIPBRIDGE_MANAGED_WINDOW")) {
+    if (qEnvironmentVariableIsSet("CLIPBRIDGE_FRAMELESS")) {
         window->setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
     }
 #endif

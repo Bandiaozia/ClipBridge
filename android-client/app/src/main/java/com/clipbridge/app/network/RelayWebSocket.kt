@@ -160,6 +160,9 @@ class RelayWebSocket(
                     _state.value = "已连接"
                     startResendLoop()
                 }
+                "heartbeat" -> socket?.send(
+                    JSONObject().put("type", "heartbeat_ack").toString()
+                )
                 "message_ack" -> pending.remove(json.optString("message_id"))
             }
             _frames.tryEmit(json)
