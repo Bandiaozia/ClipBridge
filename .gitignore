@@ -1,0 +1,26 @@
+# 构建产物
+build/
+desktop-client/build/
+.deps/
+cmake-build-*/
+*.user
+/relay-server/server
+.gradle/
+android-client/local.properties
+android-client/app/build/
+
+# 服务端运行数据与机密
+data/
+*.db
+*.db-shm
+*.db-wal
+.env
+!.env.example
+*.pem
+*.key
+
+# 编辑器与系统
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

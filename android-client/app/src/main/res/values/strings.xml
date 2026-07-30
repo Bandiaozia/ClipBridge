@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">ClipBridge</string>
+    <string name="tile_label">发送剪贴板</string>
+    <string name="notification_channel_messages">剪贴板消息</string>
+    <string name="notification_channel_service">同步服务</string>
+</resources>
