@@ -30,7 +30,7 @@ data class AppUiState(
     val selectedDeviceIds: Set<String> = emptySet(),
     val pendingText: String = "",
     val clipboardMode: String = PrivilegedClipboardState.ADB_STOPPED.label,
-    val themeColor: String = "blue",
+    val themeColor: String = "purple",
     val sendingText: Boolean = false,
 )
 
@@ -129,10 +129,14 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                     val self = container.auth.deviceIdentity().deviceId
                     val peers = devices.filter { it.id != self && !it.revoked }
                     container.sync.updateDevices(peers)
-                    val selected = container.settings.selectedDeviceIds.ifEmpty {
-                        peers.firstOrNull()?.id?.let { setOf(it) } ?: emptySet()
-                    }
-                    selected.forEach { container.sync.toggleTarget(it) }
+                    // 过滤掉已不存在的设备 ID，首次打开自动选第一个在线设备
+                    val validIds = peers.map { it.id }.toSet()
+                    val selected = container.settings.selectedDeviceIds
+                        .filter { it in validIds }.toSet()
+                        .ifEmpty {
+                            peers.firstOrNull { it.online }?.id?.let { setOf(it) } ?: emptySet()
+                        }
+                    container.settings.selectedDeviceIds = selected
                     _state.value = _state.value.copy(
                         devices = peers,
                         selectedDeviceIds = selected,
@@ -182,7 +186,6 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 _state.value = _state.value.copy(
                     sendingText = false,
                     pendingText = "",
-                    error = "发送成功，目标设备已确认",
                 )
             } else {
                 _state.value = _state.value.copy(

@@ -68,7 +68,7 @@ private fun themePrimary(themeColor: String): Color = when (themeColor) {
 
 @Composable
 fun ClipBridgeTheme(
-    themeColor: String = "blue",
+    themeColor: String = "purple",
     content: @Composable () -> Unit,
 ) {
     val primary = themePrimary(themeColor)

@@ -71,6 +71,7 @@ class ClipboardSyncCoordinator(
             _status.value = "请先选择接收设备"
             return null
         }
+        var lastId: String? = null
         targets.forEach { target ->
             runCatching {
                 val envelope = crypto.encrypt(text, target)
@@ -89,10 +90,11 @@ class ClipboardSyncCoordinator(
                 )
                 remember(envelope.messageId)
                 webSocket.send(envelope)
+                lastId = envelope.messageId
             }
         }
         _status.value = null
-        return null
+        return lastId
     }
 
     private suspend fun receive(frame: JSONObject) {

@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -59,6 +60,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
@@ -79,7 +81,10 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.delay
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -88,6 +93,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -488,68 +494,50 @@ private fun HomeScreen(state: AppUiState, viewModel: AppViewModel) {
                 }
             } else {
                 items(onlineDevices, key = { it.id }) { device ->
-                    val selected = device.id in state.selectedDeviceIds
                     ElevatedCard(
                         shape = RoundedCornerShape(12.dp),
                         elevation = CardDefaults.elevatedCardElevation(1.dp),
-                        colors = if (selected) CardDefaults.elevatedCardColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer
-                        ) else CardDefaults.elevatedCardColors(),
                     ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { viewModel.toggleDevice(device.id) }
                                 .padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Icon(
-                                Icons.Rounded.Devices,
-                                contentDescription = null,
-                                tint = if (selected) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.onSurfaceVariant,
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .background(BridgeGreen, CircleShape),
                             )
                             Spacer(Modifier.width(12.dp))
                             Text(
                                 device.name,
                                 modifier = Modifier.weight(1f),
-                                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
                             )
-                            if (selected) {
-                                Icon(
-                                    Icons.Rounded.CheckCircle,
-                                    contentDescription = "已选中",
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(20.dp),
-                                )
-                            }
                         }
                     }
                 }
             }
             item { Spacer(Modifier.height(72.dp)) }
         }
-        FilledTonalButton(
+        Button(
             onClick = {
                 if (connected) viewModel.disconnect() else viewModel.reconnect()
             },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(18.dp),
-            colors = ButtonDefaults.filledTonalButtonColors(
-                containerColor = if (connected)
-                    MaterialTheme.colorScheme.errorContainer
-                else
-                    MaterialTheme.colorScheme.primaryContainer,
-            ),
+                .padding(18.dp)
+                .height(48.dp),
+            shape = RoundedCornerShape(12.dp),
+            contentPadding = PaddingValues(horizontal = 20.dp),
         ) {
             Icon(
                 if (connected) Icons.Rounded.Sync else Icons.Rounded.Refresh,
                 contentDescription = null,
-                modifier = Modifier.size(18.dp),
+                modifier = Modifier.size(20.dp),
             )
             Spacer(Modifier.width(8.dp))
-            Text(if (connected) "断开" else "连接")
+            Text(if (connected) "断开" else "连接", fontSize = 16.sp)
         }
     }
 }
@@ -640,6 +628,7 @@ private fun SectionTitle(title: String, subtitle: String) {
 @Composable
 private fun DevicesScreen(state: AppUiState, viewModel: AppViewModel) {
     LaunchedEffect(Unit) { viewModel.refreshDevices() }
+    val onlineDevices = state.devices.filter { it.online }
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(18.dp),
@@ -653,14 +642,14 @@ private fun DevicesScreen(state: AppUiState, viewModel: AppViewModel) {
             ) {
                 SectionTitle(
                     "在线设备",
-                    "共 ${state.devices.size} 台，点击选择接收目标（可多选）",
+                    "共 ${onlineDevices.size} 台在线，点击选择接收目标（可多选）",
                 )
                 IconButton(onClick = viewModel::refreshDevices) {
                     Icon(Icons.Rounded.Refresh, contentDescription = "刷新设备")
                 }
             }
         }
-        if (state.devices.isEmpty()) {
+        if (onlineDevices.isEmpty()) {
             item {
                 EmptyState(
                     icon = Icons.Rounded.Devices,
@@ -671,7 +660,7 @@ private fun DevicesScreen(state: AppUiState, viewModel: AppViewModel) {
                 )
             }
         } else {
-            items(state.devices, key = Device::id) { device ->
+            items(onlineDevices, key = Device::id) { device ->
                 DeviceCard(
                     device = device,
                     selected = device.id in state.selectedDeviceIds,
@@ -710,7 +699,13 @@ private fun DevicesScreen(state: AppUiState, viewModel: AppViewModel) {
                         shape = RoundedCornerShape(10.dp),
                     ) {
                         if (state.sendingText) {
-                            Text("正在等待目标设备确认…")
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onPrimary,
+                            )
+                            Spacer(Modifier.width(10.dp))
+                            Text("发送中…")
                         } else {
                             Icon(Icons.AutoMirrored.Rounded.Send, contentDescription = null)
                             Spacer(Modifier.size(8.dp))
@@ -718,17 +713,6 @@ private fun DevicesScreen(state: AppUiState, viewModel: AppViewModel) {
                         }
                     }
                 }
-            }
-        }
-        item {
-            OutlinedButton(
-                onClick = { viewModel.setScreen(Screen.PAIRING) },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(10.dp),
-            ) {
-                Icon(Icons.Rounded.QrCodeScanner, contentDescription = null)
-                Spacer(Modifier.size(8.dp))
-                Text("扫描电脑配对二维码")
             }
         }
     }
@@ -790,31 +774,12 @@ private fun DeviceCard(device: Device, selected: Boolean, onClick: () -> Unit) {
 
 @Composable
 private fun HistoryScreen(history: List<HistoryEntity>, viewModel: AppViewModel) {
-    var query by remember { mutableStateOf("") }
     var confirmClear by remember { mutableStateOf(false) }
-    val filtered = remember(history, query) {
-        if (query.isBlank()) history else history.filter {
-            it.content.contains(query, true) ||
-                it.sourceDevice.contains(query, true) ||
-                it.targetDevice.contains(query, true)
-        }
-    }
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(18.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        item {
-            OutlinedTextField(
-                value = query,
-                onValueChange = { query = it },
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("搜索内容或设备") },
-                leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
-                singleLine = true,
-                shape = RoundedCornerShape(10.dp),
-            )
-        }
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -822,7 +787,7 @@ private fun HistoryScreen(history: List<HistoryEntity>, viewModel: AppViewModel)
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    "${filtered.size} 条记录",
+                    "${history.size} 条记录",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.labelLarge,
                 )
@@ -830,24 +795,20 @@ private fun HistoryScreen(history: List<HistoryEntity>, viewModel: AppViewModel)
                     enabled = history.isNotEmpty(),
                     onClick = { confirmClear = true },
                 ) {
-                    Text("清空全部", color = MaterialTheme.colorScheme.error)
+                    Text("清空", color = MaterialTheme.colorScheme.error)
                 }
             }
         }
-        if (filtered.isEmpty()) {
+        if (history.isEmpty()) {
             item {
                 EmptyState(
                     icon = Icons.Rounded.History,
-                    title = if (query.isBlank()) "还没有同步记录" else "没有匹配结果",
-                    subtitle = if (query.isBlank()) {
-                        "复制并同步的非敏感文字会显示在这里。"
-                    } else {
-                        "尝试使用更短的关键词。"
-                    },
+                    title = "还没有同步记录",
+                    subtitle = "复制并同步的非敏感文字会显示在这里。",
                 )
             }
         } else {
-            items(filtered, key = HistoryEntity::id) { item ->
+            items(history, key = HistoryEntity::id) { item ->
                 HistoryCard(item, viewModel)
             }
         }
@@ -856,14 +817,12 @@ private fun HistoryScreen(history: List<HistoryEntity>, viewModel: AppViewModel)
         AlertDialog(
             onDismissRequest = { confirmClear = false },
             title = { Text("清空剪贴板历史？") },
-            text = { Text("所有未收藏和已收藏记录都会从本机删除，此操作不可撤销。") },
+            text = { Text("所有记录都会从本机删除，此操作不可撤销。") },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        viewModel.clearHistory()
-                        confirmClear = false
-                    },
-                ) { Text("清空", color = MaterialTheme.colorScheme.error) }
+                TextButton(onClick = {
+                    viewModel.clearHistory()
+                    confirmClear = false
+                }) { Text("清空", color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
                 TextButton(onClick = { confirmClear = false }) { Text("取消") }
@@ -881,65 +840,39 @@ private fun HistoryCard(item: HistoryEntity, viewModel: AppViewModel) {
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.elevatedCardElevation(1.dp),
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Surface(
-                    shape = RoundedCornerShape(6.dp),
-                    color = if (item.local) {
-                        MaterialTheme.colorScheme.primaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.tertiaryContainer
-                    },
-                ) {
-                    Text(
-                        if (item.local) "本机发送" else "远端接收",
-                        style = MaterialTheme.typography.labelSmall,
-                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
-                    )
-                }
-                Spacer(Modifier.weight(1f))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { viewModel.copyHistory(item.content) }
+                .padding(16.dp),
+            verticalAlignment = Alignment.Top,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    item.content,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Spacer(Modifier.height(6.dp))
                 Text(
                     time,
-                    style = MaterialTheme.typography.labelMedium,
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Spacer(Modifier.height(11.dp))
-            Text(
-                item.content,
-                maxLines = 5,
-                overflow = TextOverflow.Ellipsis,
-                style = MaterialTheme.typography.bodyLarge,
-            )
-            Spacer(Modifier.height(9.dp))
-            Text(
-                if (item.sent) "已确认" else "等待确认",
-                color = if (item.sent) BridgeGreen else BridgeOrange,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.SemiBold,
-            )
-            HorizontalDivider(Modifier.padding(vertical = 10.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                TextButton(onClick = { viewModel.copyHistory(item.content) }) {
-                    Icon(Icons.Rounded.ContentCopy, contentDescription = null)
-                    Spacer(Modifier.size(6.dp))
-                    Text("复制")
-                }
-                IconButton(onClick = { viewModel.toggleFavorite(item) }) {
-                    Icon(
-                        if (item.favorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
-                        contentDescription = if (item.favorite) "取消收藏" else "收藏",
-                        tint = if (item.favorite) BridgeOrange
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                IconButton(onClick = { viewModel.deleteHistory(item) }) {
-                    Icon(
-                        Icons.Rounded.Delete,
-                        contentDescription = "删除",
-                        tint = MaterialTheme.colorScheme.error,
-                    )
-                }
+            Spacer(Modifier.width(8.dp))
+            IconButton(
+                onClick = { viewModel.toggleFavorite(item) },
+                modifier = Modifier.size(32.dp),
+            ) {
+                Icon(
+                    if (item.favorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                    contentDescription = null,
+                    tint = if (item.favorite) BridgeOrange
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp),
+                )
             }
         }
     }

@@ -48,6 +48,6 @@ class SettingsStore(context: Context) {
      * 只保存稳定的主题标识，不保存具体色值。这样后续微调配色时，用户的选择仍然有效。
      */
     var themeColor: String
-        get() = preferences.getString("theme_color", "blue") ?: "blue"
+        get() = preferences.getString("theme_color", "purple") ?: "purple"
         set(value) = preferences.edit().putString("theme_color", value).apply()
 }
