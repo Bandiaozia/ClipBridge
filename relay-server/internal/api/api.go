@@ -17,7 +17,6 @@ import (
 	"net/http"
 	"net/mail"
 	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 	"sync"
@@ -548,14 +547,11 @@ func (a *API) dashDevices(w http.ResponseWriter, r *http.Request) {
 
 func (a *API) dashWireGuard(w http.ResponseWriter, r *http.Request) {
 	if !a.dashCheck(r) { a.write(w, http.StatusUnauthorized, map[string]any{"error": "未授权"}); return }
-	ctx, cancel := context.WithTimeout(r.Context(), 4*time.Second)
-	defer cancel()
-
 	// 读配置
 	cfg, _ := os.ReadFile("/etc/wireguard/wg0.conf")
 
 	// 读 peer 信息
-	out, err := exec.CommandContext(ctx, "nsenter", "--target", "1", "--net", "wg", "show", "wg0", "dump").Output()
+	out, err := os.ReadFile("/tmp/wg-dump")
 	type peerInfo struct {
 		PublicKey  string `json:"public_key"`
 		AllowedIPs string `json:"allowed_ips"`
