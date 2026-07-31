@@ -595,30 +595,29 @@ func (a *API) dashWireGuard(w http.ResponseWriter, r *http.Request) {
 
 func (a *API) dashShadowsocks(w http.ResponseWriter, r *http.Request) {
 	if !a.dashCheck(r) { a.write(w, http.StatusUnauthorized, map[string]any{"error": "未授权"}); return }
-	ctx, cancel := context.WithTimeout(r.Context(), 4*time.Second)
-	defer cancel()
-
 	cfg, _ := os.ReadFile("/etc/shadowsocks-libev/config.json")
 	var ssCfg map[string]any
 	json.Unmarshal(cfg, &ssCfg)
 
-	// 读活跃连接
-	out, _ := exec.CommandContext(ctx, "ss", "-tnp", "sport", "= :8388").Output()
+	// 读活跃连接（从 host proc）
 	type connInfo struct {
 		Client string `json:"client"`
 		Status string `json:"status"`
 	}
 	conns := []connInfo{}
 	seen := map[string]bool{}
-	for _, line := range strings.Split(string(out), "\n") {
-		if !strings.Contains(line, "ESTAB") { continue }
+	data, _ := os.ReadFile("/host-proc/net/tcp")
+	for _, line := range strings.Split(string(data), "\n") {
+		if !strings.Contains(line, " 20C8 ") { continue } // port 8388 = 0x20C8
 		parts := strings.Fields(line)
-		if len(parts) < 5 { continue }
-		addr := parts[4]
-		if idx := strings.LastIndex(addr, ":"); idx > 0 { addr = addr[:idx] }
-		if seen[addr] { continue }
-		seen[addr] = true
-		conns = append(conns, connInfo{Client: addr, Status: "已连接"})
+		if len(parts) < 3 { continue }
+		if parts[3] != "01" { continue } // ESTABLISHED
+		hexIP := parts[1]
+		if idx := strings.LastIndex(hexIP, ":"); idx > 0 { hexIP = hexIP[:idx] }
+		ip := parseHexIP(hexIP)
+		if ip == "" || seen[ip] { continue }
+		seen[ip] = true
+		conns = append(conns, connInfo{Client: ip, Status: "已连接"})
 	}
 
 	// 脱敏密码
@@ -628,6 +627,16 @@ func (a *API) dashShadowsocks(w http.ResponseWriter, r *http.Request) {
 		"connections": conns,
 		"conn_count":  len(conns),
 	})
+}
+
+func parseHexIP(hex string) string {
+	if len(hex) != 8 { return "" }
+	b := make([]byte, 4)
+	for i := 0; i < 4; i++ {
+		v, _ := strconv.ParseUint(hex[i*2:i*2+2], 16, 8)
+		b[3-i] = byte(v) // little endian
+	}
+	return fmt.Sprintf("%d.%d.%d.%d", b[0], b[1], b[2], b[3])
 }
 
 func hideKey(s, key string) string {
