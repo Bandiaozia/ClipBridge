@@ -66,9 +66,15 @@ class ClipboardSyncCoordinator(
             _status.value = "检测到疑似敏感内容：${reasons.joinToString("、")}，已阻止自动发送"
             return null
         }
-        val targets = devices.value.filter { it.id in settings.selectedDeviceIds }
+        val selected = settings.selectedDeviceIds
+        val targets = if (selected.isNotEmpty()) {
+            devices.value.filter { it.id in selected }
+        } else {
+            // 没手动选设备时，自动发给所有在线设备
+            devices.value.filter { it.online }
+        }
         if (targets.isEmpty()) {
-            _status.value = "请先选择接收设备"
+            _status.value = "没有在线设备可发送"
             return null
         }
         var lastId: String? = null
