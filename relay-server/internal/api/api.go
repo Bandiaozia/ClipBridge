@@ -399,10 +399,10 @@ func (a *API) stats(w http.ResponseWriter, _ *http.Request) {
 func (a *API) proxyShadowsocks(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 4*time.Second)
 	defer cancel()
-	req, _ := http.NewRequestWithContext(ctx, "GET", "http://172.18.0.1:8388", nil)
-	resp, err := http.DefaultClient.Do(req)
-	online := err == nil && resp.StatusCode < 500
-	if resp != nil { resp.Body.Close() }
+	var d net.Dialer
+	conn, err := d.DialContext(ctx, "tcp", "172.18.0.1:8388")
+	online := err == nil
+	if conn != nil { conn.Close() }
 	a.write(w, http.StatusOK, map[string]any{"online": online})
 }
 
