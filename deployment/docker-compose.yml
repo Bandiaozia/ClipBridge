@@ -35,6 +35,7 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    pid: host
     read_only: true
     tmpfs:
       - /tmp:size=16m,mode=1777

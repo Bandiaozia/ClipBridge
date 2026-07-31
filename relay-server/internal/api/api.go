@@ -68,7 +68,10 @@ func New(store *service.Store, tokens *auth.TokenManager, hub *clipws.Hub,
 	mux.HandleFunc("GET /proxy/wireguard", api.proxyWireGuard)
 	// Dashboard
 	mux.HandleFunc("GET /dashboard", func(w http.ResponseWriter, r *http.Request) { api.dashPage(w, r) })
+	mux.HandleFunc("GET /dashboard/data", api.dashData)
 	mux.HandleFunc("POST /dashboard", api.dashLogin)
+	mux.HandleFunc("POST /dashboard/wg", api.dashWGAction)
+	mux.HandleFunc("POST /dashboard/ss", api.dashSSAction)
 	mux.HandleFunc("POST /api/v1/auth/register", api.register)
 	mux.HandleFunc("POST /api/v1/auth/login", api.login)
 	mux.HandleFunc("POST /api/v1/auth/refresh", api.refresh)
