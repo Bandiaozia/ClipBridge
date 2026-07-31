@@ -427,7 +427,7 @@ func (a *API) proxyClash(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) proxyWireGuard(w http.ResponseWriter, r *http.Request) {
-	_, err := os.Stat("/sys/class/net/wg0")
+	_, err := os.Lstat("/sys/class/net/wg0")
 	online := err == nil
 	a.write(w, http.StatusOK, map[string]any{"online": online})
 }
