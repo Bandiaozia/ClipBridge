@@ -15,7 +15,7 @@
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     background: var(--bg); color: var(--text);
     min-height: 100vh; display: flex; justify-content: center;
-    padding: 80px 24px 48px;
+    padding: 60px 24px 48px;
   }
   .main { width: 100%; max-width: 720px; }
 
@@ -38,25 +38,15 @@
   }
   .login-box .err { color: var(--red); font-size: 13px; margin-top: 8px; }
 
-  /* Layout */
-  h1 { font-size: 22px; font-weight: 500; }
-  .sub { color: var(--muted); font-size: 13px; margin: 4px 0 28px; }
-  .section { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; margin: 32px 0 10px; }
+  /* Header */
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+  .header h1 { font-size: 22px; font-weight: 500; }
+  .header .sub { color: var(--muted); font-size: 12px; }
+  .logout { color: var(--muted); font-size: 12px; cursor: pointer; }
+  .logout:hover { color: var(--red); }
 
-  .row {
-    display: flex; align-items: center; gap: 14px;
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 10px; padding: 18px 20px; margin-bottom: 8px;
-  }
-  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-  .dot.up   { background: var(--green); box-shadow: 0 0 8px rgba(45,212,191,0.5); }
-  .dot.down { background: var(--red);   box-shadow: 0 0 8px rgba(248,113,113,0.5); }
-  .info { flex: 1; min-width: 0; }
-  .info .name { font-size: 15px; font-weight: 500; }
-  .info .desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
-  .meta { text-align: right; flex-shrink: 0; font-size: 12px; color: var(--muted); line-height: 1.6; }
-
-  .gauges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 8px; }
+  /* System gauges */
+  .gauges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 24px; }
   .gauge {
     background: var(--surface); border: 1px solid var(--border);
     border-radius: 10px; padding: 16px; text-align: center;
@@ -66,88 +56,125 @@
   .gauge .bar { margin-top: 10px; height: 4px; border-radius: 2px; background: #1e1e2e; overflow: hidden; }
   .gauge .bar div { height: 100%; border-radius: 2px; transition: width 0.8s ease; }
 
-  .stats2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
-  .stat {
+  /* Accordion */
+  .acc { margin-bottom: 8px; }
+  .acc-head {
+    display: flex; align-items: center; gap: 14px;
     background: var(--surface); border: 1px solid var(--border);
-    border-radius: 10px; padding: 16px; text-align: center;
+    border-radius: 10px; padding: 18px 20px; cursor: pointer;
+    transition: border-color 0.2s, border-radius 0.2s;
   }
-  .stat .val { font-size: 20px; font-weight: 500; }
-  .stat .lbl { font-size: 11px; color: var(--muted); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .acc-head:hover { border-color: #2a2a3e; }
+  .acc.open .acc-head { border-radius: 10px 10px 0 0; border-bottom-color: transparent; }
+  .acc-head .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .acc-head .dot.up   { background: var(--green); box-shadow: 0 0 8px rgba(45,212,191,0.5); }
+  .acc-head .dot.down { background: var(--red);   box-shadow: 0 0 8px rgba(248,113,113,0.5); }
+  .acc-head .info { flex: 1; min-width: 0; text-align: left; }
+  .acc-head .info .name { font-size: 15px; font-weight: 500; }
+  .acc-head .info .desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .acc-head .meta { text-align: right; flex-shrink: 0; font-size: 12px; color: var(--muted); line-height: 1.6; }
+  .acc-head .arrow { color: var(--muted); font-size: 12px; transition: transform 0.2s; }
+  .acc.open .acc-head .arrow { transform: rotate(180deg); }
 
-  /* detail card */
-  .detail {
+  .acc-body {
+    display: none;
     background: var(--surface); border: 1px solid var(--border);
-    border-radius: 10px; padding: 18px 20px; margin-bottom: 8px;
+    border-top: none; border-radius: 0 0 10px 10px; padding: 0 20px 18px;
   }
-  .detail h3 { font-size: 14px; font-weight: 600; margin-bottom: 10px; }
-  .detail pre {
-    background: var(--bg); border-radius: 8px; padding: 14px;
-    font-size: 12px; overflow-x: auto; white-space: pre-wrap; word-break: break-all;
-    max-height: 200px; overflow-y: auto; color: var(--muted);
-  }
-  .peer {
+  .acc.open .acc-body { display: block; }
+
+  .detail-row {
     display: flex; justify-content: space-between; align-items: center;
     padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px;
   }
-  .peer:last-child { border: none; }
-  .peer .ip { color: var(--green); font-weight: 500; }
-  .peer .traffic { color: var(--muted); font-size: 12px; }
-  .device-row {
-    display: flex; align-items: center; gap: 10px;
-    padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px;
+  .detail-row:last-child { border: none; }
+  .label { color: var(--muted); }
+  .val { font-weight: 500; }
+  .val.green { color: var(--green); }
+  .val.red { color: var(--red); }
+
+  .tag {
+    display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500;
   }
-  .device-row:last-child { border: none; }
-  .device-row .d-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .tag.online { background: rgba(45,212,191,0.12); color: var(--green); }
+  .tag.offline { background: rgba(248,113,113,0.12); color: var(--red); }
+  .tag.revoked { background: rgba(251,191,36,0.12); color: var(--amber); }
+
+  .config-box {
+    background: var(--bg); border-radius: 8px; padding: 14px;
+    font-size: 12px; overflow-x: auto; white-space: pre-wrap; word-break: break-all;
+    max-height: 200px; overflow-y: auto; color: var(--muted); margin: 10px 0;
+  }
   .btn {
     display: inline-block; padding: 8px 16px; border-radius: 8px;
     font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid var(--border);
     background: var(--surface); color: var(--text); text-decoration: none;
   }
   .btn:hover { border-color: var(--green); }
+
   .footer { text-align: center; color: var(--muted); font-size: 11px; margin-top: 32px; }
-  .logout { float: right; color: var(--muted); font-size: 12px; cursor: pointer; }
 </style>
 </head>
 <body>
 
-<!-- ====== 登录页 ====== -->
+<!-- ====== Login ====== -->
 <div id="login" class="main">
   <div class="login-box">
     <h1>Dashboard</h1>
-    <p>请输入密码查看服务器状态</p>
+    <p>输入密码查看服务器状态</p>
     <input type="password" id="pw" placeholder="密码" autofocus>
     <button onclick="login()">进入</button>
     <div class="err" id="err"></div>
   </div>
 </div>
 
-<!-- ====== 主面板 ====== -->
+<!-- ====== Dashboard ====== -->
 <div id="dash" class="main" style="display:none">
-  <div class="logout" onclick="logout()">退出</div>
-  <h1>Dashboard</h1>
-  <p class="sub">clipbridge.ccttkx.xyz</p>
 
-  <div class="section">系统</div>
+  <div class="header">
+    <div><h1>Dashboard</h1><div class="sub">clipbridge.ccttkx.xyz</div></div>
+    <div class="logout" onclick="logout()">退出</div>
+  </div>
+
+  <!-- System -->
   <div class="gauges">
     <div class="gauge"><div class="val" id="cpu">--</div><div class="lbl">CPU</div><div class="bar"><div style="width:0" id="cb"></div></div></div>
     <div class="gauge"><div class="val" id="mem">--</div><div class="lbl">内存</div><div class="bar"><div style="width:0" id="mb"></div></div></div>
     <div class="gauge"><div class="val" id="disk">--</div><div class="lbl">磁盘剩余</div><div class="bar"><div style="width:0" id="db"></div></div></div>
   </div>
 
-  <div class="section">服务</div>
-  <div class="row"><div class="dot" id="b-dot"></div><div class="info"><div class="name">ClipBridge</div><div class="desc">E2E 剪贴板中继</div></div><div class="meta"><div id="b-up">--</div><div id="b-ms">--</div></div></div>
-  <div class="stats2"><div class="stat"><div class="val" id="b-u">--</div><div class="lbl">在线用户</div></div><div class="stat"><div class="val" id="b-d">--</div><div class="lbl">在线设备</div></div></div>
-  <div class="row"><div class="dot" id="s-dot"></div><div class="info"><div class="name">Shadowsocks</div><div class="desc">代理 :8388</div></div><div class="meta"><div id="s-ms">--</div></div></div>
-  <div class="row"><div class="dot" id="w-dot"></div><div class="info"><div class="name">WireGuard</div><div class="desc">VPN wg0</div></div><div class="meta"><div id="w-ms">--</div></div></div>
+  <!-- ClipBridge -->
+  <div class="acc" id="acc-b">
+    <div class="acc-head" onclick="toggle('acc-b')">
+      <div class="dot" id="b-dot"></div>
+      <div class="info"><div class="name">ClipBridge</div><div class="desc">端到端加密剪贴板中继</div></div>
+      <div class="meta"><div id="b-ms">--</div></div>
+      <div class="arrow">▼</div>
+    </div>
+    <div class="acc-body" id="body-b"></div>
+  </div>
 
-  <div class="section">ClipBridge 设备</div>
-  <div class="detail"><div id="dev-list">加载中…</div></div>
+  <!-- WireGuard -->
+  <div class="acc" id="acc-w">
+    <div class="acc-head" onclick="toggle('acc-w')">
+      <div class="dot" id="w-dot"></div>
+      <div class="info"><div class="name">WireGuard</div><div class="desc">VPN 隧道 · wg0</div></div>
+      <div class="meta"><div id="w-ms">--</div></div>
+      <div class="arrow">▼</div>
+    </div>
+    <div class="acc-body" id="body-w"></div>
+  </div>
 
-  <div class="section">WireGuard 节点</div>
-  <div class="detail"><div id="wg-list">加载中…</div><div style="margin-top:12px"><button class="btn" id="wg-dl" style="display:none">下载配置文件</button></div></div>
-
-  <div class="section">Shadowsocks 连接</div>
-  <div class="detail"><div id="ss-info">加载中…</div></div>
+  <!-- Shadowsocks -->
+  <div class="acc" id="acc-s">
+    <div class="acc-head" onclick="toggle('acc-s')">
+      <div class="dot" id="s-dot"></div>
+      <div class="info"><div class="name">Shadowsocks</div><div class="desc">代理服务 · :8388</div></div>
+      <div class="meta"><div id="s-ms">--</div></div>
+      <div class="arrow">▼</div>
+    </div>
+    <div class="acc-body" id="body-s"></div>
+  </div>
 
   <div class="footer">刷新 <span id="tick">--</span></div>
 </div>
@@ -164,38 +191,30 @@ async function login() {
     });
     const d = await r.json();
     if (d.token) {
-      TOKEN = d.token;
-      sessionStorage.setItem('dtok', TOKEN);
+      TOKEN = d.token; sessionStorage.setItem('dtok', TOKEN);
       document.getElementById('login').style.display = 'none';
       document.getElementById('dash').style.display = 'block';
       document.getElementById('err').textContent = '';
-      tick();
-      setInterval(tick, 5000);
+      tick(); setInterval(tick, 5000);
     } else {
       document.getElementById('err').textContent = d.error || '密码错误';
     }
   } catch { document.getElementById('err').textContent = '连接失败'; }
 }
 
-function logout() {
-  sessionStorage.removeItem('dtok');
-  TOKEN = '';
-  location.reload();
+function logout() { sessionStorage.removeItem('dtok'); TOKEN = ''; location.reload(); }
+function toggle(id) {
+  document.getElementById(id).classList.toggle('open');
 }
 
-// Auto login
 if (TOKEN) {
   document.getElementById('login').style.display = 'none';
   document.getElementById('dash').style.display = 'block';
-  tick();
-  setInterval(tick, 5000);
+  tick(); setInterval(tick, 5000);
 }
 document.getElementById('pw').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
 
-// --- data ---
-
 function hdr() { return { headers: { Authorization: 'Bearer ' + TOKEN } }; }
-
 async function get(path) {
   const t0 = performance.now();
   try {
@@ -205,15 +224,11 @@ async function get(path) {
 }
 
 function bar(v, el) { el.style.width = v + '%'; el.style.background = v > 80 ? 'var(--red)' : v > 60 ? 'var(--amber)' : 'var(--green)'; }
-
 function up(s) {
   if (!s || s <= 0) return '--';
   const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60);
-  if (d) return d + '天 ' + h + '时';
-  if (h) return h + '时 ' + m + '分';
-  return m + '分';
+  if (d) return d + '天 ' + h + '时'; if (h) return h + '时 ' + m + '分'; return m + '分';
 }
-
 function traffic(b) {
   if (!b || b < 0) return '0 B';
   if (b > 1e9) return (b / 1e9).toFixed(1) + ' GB';
@@ -221,11 +236,12 @@ function traffic(b) {
   if (b > 1e3) return (b / 1e3).toFixed(1) + ' KB';
   return b + ' B';
 }
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
 async function tick() {
   if (!TOKEN) return;
-  const [sys, b, s, w, dev, wg, ss] = await Promise.all([
-    get('/stats/system'), get('/stats'), get('/proxy/shadowsocks'), get('/proxy/wireguard'),
+  const [sys, b, w, s, dev, wg, ss] = await Promise.all([
+    get('/stats/system'), get('/stats'), get('/proxy/wireguard'), get('/proxy/shadowsocks'),
     get('/dashboard/devices'), get('/dashboard/wireguard'), get('/dashboard/shadowsocks'),
   ]);
 
@@ -240,72 +256,85 @@ async function tick() {
     document.getElementById('disk').textContent = (sys.data.disk_avail_gb || 0).toFixed(0) + ' GB'; bar(100 - dp, document.getElementById('db'));
   }
 
-  // Bridge
+  // ClipBridge
   const bd = document.getElementById('b-dot');
   if (b.ok) {
     bd.className = 'dot up';
-    document.getElementById('b-up').textContent = up(b.data.uptime_seconds);
     document.getElementById('b-ms').textContent = b.ms + 'ms';
-    document.getElementById('b-u').textContent = b.data.users ?? '--';
-    document.getElementById('b-d').textContent = b.data.devices ?? '--';
-  } else { bd.className = 'dot down'; document.getElementById('b-up').textContent = '离线'; }
-
-  // Shadowsocks
-  document.getElementById('s-dot').className = 'dot ' + (s.ok && s.data.online ? 'up' : 'down');
-  document.getElementById('s-ms').textContent = s.ms ? s.ms + 'ms' : '--';
+    let h = '<div class="detail-row"><span class="label">运行时长</span><span class="val green">' + up(b.data.uptime_seconds) + '</span></div>';
+    h += '<div class="detail-row"><span class="label">在线用户</span><span class="val">' + (b.data.users ?? '--') + '</span></div>';
+    h += '<div class="detail-row"><span class="label">在线设备</span><span class="val">' + (b.data.devices ?? '--') + '</span></div>';
+    if (dev.ok && dev.data.devices) {
+      h += '<div style="margin-top:12px;font-size:13px;color:var(--muted);margin-bottom:6px">设备列表</div>';
+      for (const d of dev.data.devices) {
+        const tag = d.revoked ? 'revoked' : d.online ? 'online' : 'offline';
+        const label = d.revoked ? '已撤销' : d.online ? '在线' : '离线';
+        h += '<div class="detail-row"><span>' + esc(d.name) + '</span><span><span style="color:var(--muted);font-size:12px;margin-right:8px">' + esc(d.platform) + '</span><span class="tag ' + tag + '">' + label + '</span></span></div>';
+      }
+    }
+    document.getElementById('body-b').innerHTML = h;
+  } else {
+    bd.className = 'dot down';
+    document.getElementById('b-ms').textContent = '离线';
+    document.getElementById('body-b').innerHTML = '<div class="detail-row"><span class="val red">服务不可达</span></div>';
+  }
 
   // WireGuard
   document.getElementById('w-dot').className = 'dot ' + (w.ok && w.data.online ? 'up' : 'down');
   document.getElementById('w-ms').textContent = w.ms ? w.ms + 'ms' : '--';
-
-  // Devices
-  if (dev.ok && dev.data.devices) {
-    let h = '';
-    for (const d of dev.data.devices) {
-      const on = d.online ? 'up' : 'down';
-      h += '<div class="device-row"><div class="d-dot ' + on + '"></div><span style="flex:1">' + esc(d.name) + '</span><span style="color:var(--muted);font-size:12px">' + esc(d.platform) + ' · ' + (d.online ? '在线' : '离线') + (d.revoked ? ' · 已撤销' : '') + '</span></div>';
+  if (wg.ok && wg.data.peers) {
+    let h = '<div class="detail-row"><span class="label">监听端口</span><span class="val">51820</span></div>';
+    h += '<div class="detail-row"><span class="label">地址段</span><span class="val green">10.0.0.1/24</span></div>';
+    h += '<div class="detail-row"><span class="label">在线节点</span><span class="val">' + wg.data.peers.length + '</span></div>';
+    h += '<div style="margin-top:12px;font-size:13px;color:var(--muted);margin-bottom:6px">节点详情</div>';
+    for (const p of wg.data.peers) {
+      const key = p.public_key.substring(0, 14) + '…';
+      h += '<div class="detail-row" style="flex-wrap:wrap">';
+      h += '<div style="width:100%;display:flex;justify-content:space-between"><span>' + esc(key) + '</span><span class="val green">' + esc(p.allowed_ips) + '</span></div>';
+      h += '<div style="width:100%;display:flex;justify-content:space-between;margin-top:4px">';
+      h += '<span style="color:var(--muted);font-size:12px">' + esc(p.endpoint) + ' · 最后握手: ' + p.last_handshake + '</span>';
+      h += '<span style="font-size:12px">↓' + traffic(p.tx_bytes) + ' ↑' + traffic(p.rx_bytes) + '</span>';
+      h += '</div></div>';
     }
-    document.getElementById('dev-list').innerHTML = h || '暂无设备';
-  }
-
-  // WireGuard peers
-  if (wg.ok) {
-    let h = '';
-    for (const p of wg.data.peers || []) {
-      h += '<div class="peer"><div><div>' + esc(p.public_key.substring(0, 12)) + '…</div><div class="ip">' + esc(p.allowed_ips) + '</div></div><div style="text-align:right"><div class="traffic">↓' + traffic(p.tx_bytes) + ' ↑' + traffic(p.rx_bytes) + '</div><div style="font-size:11px;color:var(--muted)">' + p.last_handshake + '</div></div></div>';
-    }
-    document.getElementById('wg-list').innerHTML = h || '暂无节点';
-    const btn = document.getElementById('wg-dl');
     if (wg.data.config) {
-      btn.style.display = 'inline-block';
-      btn.onclick = function() {
-        const b = new Blob([wg.data.config], {type: 'text/plain'});
-        const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'wg0.conf'; a.click();
-      };
+      h += '<div style="margin-top:12px"><button class="btn" onclick="downloadWG()">下载配置文件</button></div>';
+      h += '<div class="config-box" style="display:none" id="wg-cfg">' + esc(wg.data.config) + '</div>';
     }
+    document.getElementById('body-w').innerHTML = h;
+    window._wgCfg = wg.data.config;
+  } else {
+    document.getElementById('body-w').innerHTML = '<div class="detail-row"><span class="val red">服务不可达</span></div>';
   }
 
-  // Shadowsocks details
-  if (ss.ok) {
-    const c = ss.data.config || {};
-    let h = '<div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:12px">';
-    h += '<div><span style="color:var(--muted)">端口</span> ' + (c.server_port || '--') + '</div>';
-    h += '<div><span style="color:var(--muted)">加密</span> ' + (c.method || '--') + '</div>';
-    h += '<div><span style="color:var(--muted)">连接数</span> ' + (ss.data.conn_count || 0) + '</div>';
-    h += '</div>';
+  // Shadowsocks
+  document.getElementById('s-dot').className = 'dot ' + (s.ok && s.data.online ? 'up' : 'down');
+  document.getElementById('s-ms').textContent = s.ms ? s.ms + 'ms' : '--';
+  if (ss.ok && ss.data.config) {
+    const c = ss.data.config;
+    let h = '<div class="detail-row"><span class="label">端口</span><span class="val">' + (c.server_port || '--') + '</span></div>';
+    h += '<div class="detail-row"><span class="label">加密方式</span><span class="val green">' + (c.method || '--') + '</span></div>';
+    h += '<div class="detail-row"><span class="label">密码</span><span class="val">' + esc(c.password || '****') + '</span></div>';
+    h += '<div class="detail-row"><span class="label">Fast Open</span><span class="val">' + (c.fast_open ? '开启' : '关闭') + '</span></div>';
+    h += '<div class="detail-row"><span class="label">超时</span><span class="val">' + (c.timeout || '--') + 's</span></div>';
+    h += '<div class="detail-row"><span class="label">活跃连接</span><span class="val green">' + (ss.data.conn_count || 0) + '</span></div>';
     if (ss.data.connections && ss.data.connections.length > 0) {
+      h += '<div style="margin-top:12px;font-size:13px;color:var(--muted);margin-bottom:6px">连接客户端</div>';
       for (const cn of ss.data.connections) {
-        h += '<div class="device-row"><span style="flex:1">' + esc(cn.client) + '</span><span style="color:var(--green);font-size:12px">' + cn.status + '</span></div>';
+        h += '<div class="detail-row"><span>' + esc(cn.client) + '</span><span class="tag online">' + cn.status + '</span></div>';
       }
     }
-    document.getElementById('ss-info').innerHTML = h;
+    document.getElementById('body-s').innerHTML = h;
+  } else {
+    document.getElementById('body-s').innerHTML = '<div class="detail-row"><span class="val red">服务不可达</span></div>';
   }
 
   document.getElementById('tick').textContent = new Date().toLocaleTimeString('zh-CN');
 }
 
-function esc(s) {
-  const d = document.createElement('div'); d.textContent = s; return d.innerHTML;
+function downloadWG() {
+  if (!window._wgCfg) return;
+  const b = new Blob([window._wgCfg], {type: 'text/plain'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'wg0.conf'; a.click();
 }
 </script>
 </body>

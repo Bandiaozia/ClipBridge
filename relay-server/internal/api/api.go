@@ -604,7 +604,7 @@ func (a *API) dashShadowsocks(w http.ResponseWriter, r *http.Request) {
 	seen := map[string]bool{}
 	data, _ := os.ReadFile("/host-proc/net/tcp")
 	for _, line := range strings.Split(string(data), "\n") {
-		if !strings.Contains(line, " 20C8 ") { continue } // port 8388 = 0x20C8
+		if !strings.Contains(line, " 20C4 ") { continue } // port 8388 = 0x20C4
 		parts := strings.Fields(line)
 		if len(parts) < 3 { continue }
 		if parts[3] != "01" { continue } // ESTABLISHED
