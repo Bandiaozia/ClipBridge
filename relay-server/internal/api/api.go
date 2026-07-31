@@ -13,6 +13,7 @@ import (
 	"net"
 	"net/http"
 	"net/mail"
+	"os/exec"
 	"strings"
 	"sync"
 	"time"
@@ -40,6 +41,7 @@ type API struct {
 	log          *slog.Logger
 	maxBodyBytes int64
 	limiter      *rateLimiter
+	startedAt    time.Time
 }
 
 func New(store *service.Store, tokens *auth.TokenManager, hub *clipws.Hub,
@@ -47,10 +49,13 @@ func New(store *service.Store, tokens *auth.TokenManager, hub *clipws.Hub,
 	maxBodyBytes int64, ratePerMinute int) http.Handler {
 	api := &API{store: store, tokens: tokens, hub: hub, ws: wsServer,
 		db: db, log: log, maxBodyBytes: maxBodyBytes,
-		limiter: newRateLimiter(ratePerMinute)}
+		limiter: newRateLimiter(ratePerMinute), startedAt: time.Now()}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", api.health)
 	mux.HandleFunc("GET /ready", api.ready)
+	mux.HandleFunc("GET /stats", api.stats)
+	mux.HandleFunc("GET /proxy/clash", api.proxyClash)
+	mux.HandleFunc("GET /proxy/wireguard", api.proxyWireGuard)
 	mux.HandleFunc("POST /api/v1/auth/register", api.register)
 	mux.HandleFunc("POST /api/v1/auth/login", api.login)
 	mux.HandleFunc("POST /api/v1/auth/refresh", api.refresh)
@@ -379,6 +384,65 @@ func (a *API) ready(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.write(w, http.StatusOK, map[string]any{"status": "ready"})
+}
+
+func (a *API) stats(w http.ResponseWriter, _ *http.Request) {
+	hubStats := a.hub.Stats()
+	a.write(w, http.StatusOK, map[string]any{
+		"status":         "ok",
+		"users":          hubStats.Users,
+		"devices":        hubStats.Devices,
+		"uptime_seconds": int64(time.Since(a.startedAt).Seconds()),
+	})
+}
+
+func (a *API) proxyClash(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 4*time.Second)
+	defer cancel()
+	req, _ := http.NewRequestWithContext(ctx, "GET", "http://127.0.0.1:9090/version", nil)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		a.write(w, http.StatusOK, map[string]any{"online": false, "error": err.Error()})
+		return
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
+	var clashInfo map[string]any
+	json.Unmarshal(body, &clashInfo)
+	a.write(w, http.StatusOK, map[string]any{
+		"online":   true,
+		"version":  clashInfo["version"],
+		"uptime_seconds": func() int64 {
+			req2, _ := http.NewRequestWithContext(ctx, "GET", "http://127.0.0.1:9090", nil)
+			resp2, err := http.DefaultClient.Do(req2)
+			if err != nil || resp2.StatusCode != 200 { return 0 }
+			defer resp2.Body.Close()
+			body2, _ := io.ReadAll(io.LimitReader(resp2.Body, 4096))
+			var meta map[string]any
+			json.Unmarshal(body2, &meta)
+			if up, ok := meta["upTime"].(float64); ok { return int64(up) }
+			return 0
+		}(),
+	})
+}
+
+func (a *API) proxyWireGuard(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 4*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, "wg", "show")
+	out, err := cmd.Output()
+	if err != nil {
+		a.write(w, http.StatusOK, map[string]any{"online": false, "error": err.Error()})
+		return
+	}
+	lines := 0
+	for _, b := range out {
+		if b == '\n' { lines++ }
+	}
+	a.write(w, http.StatusOK, map[string]any{
+		"online":       true,
+		"interface_count": lines,
+	})
 }
 
 func (a *API) requireAuth(next http.Handler) http.Handler {

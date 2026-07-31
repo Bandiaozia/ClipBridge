@@ -124,6 +124,22 @@ func (h *Hub) RevokeUser(userID string) {
 	}
 }
 
+type Stats struct {
+	Users   int
+	Devices int
+}
+
+func (h *Hub) Stats() Stats {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	users := len(h.clients)
+	devices := 0
+	for _, byDevice := range h.clients {
+		devices += len(byDevice)
+	}
+	return Stats{Users: users, Devices: devices}
+}
+
 func (h *Hub) MarkOnline(userID string, devices []string) map[string]bool {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
