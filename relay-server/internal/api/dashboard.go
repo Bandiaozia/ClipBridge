@@ -390,6 +390,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .peer-key{font-size:12px;color:var(--muted);font-family:monospace}
 .peer-ip{font-size:14px;font-weight:600;color:var(--green)}
 .peer-meta{display:flex;gap:20px;font-size:11px;color:var(--muted);margin-top:6px}
+@media(max-width:640px){
+  body{padding:24px 14px 48px}
+  .gauges{grid-template-columns:repeat(3,1fr);gap:8px}
+  .g{padding:14px 8px 12px}.gv{font-size:22px}.gr{width:44px;height:44px;top:6px}
+  .svc-h{padding:16px}.svc-icon{width:34px;height:34px;font-size:15px;border-radius:8px}
+  .svc-n{font-size:14px}.svc-n .svc-desc{font-size:11px}
+  .topbar{margin-bottom:24px}
+  .login-box{padding:32px 24px;margin:80px auto}
+  .peer-meta{flex-wrap:wrap;gap:10px}.peer-ip{font-size:13px}
+  .btn{padding:7px 12px;font-size:11px}
+}
+@media(max-width:380px){
+  .gauges{grid-template-columns:repeat(2,1fr)}
+  .svc-h{padding:14px;gap:10px}
+}
 </style></head><body><div class="main">`
 
 const pageFoot = `</div><script>
