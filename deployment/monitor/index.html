@@ -6,28 +6,40 @@
 <title>Dashboard</title>
 <style>
   :root {
-    --bg: #0a0a0f;
-    --surface: #12121a;
-    --border: #1e1e2e;
-    --text: #e4e4ed;
-    --muted: #6b6b7b;
-    --green: #2dd4bf;
-    --red: #f87171;
-    --amber: #fbbf24;
-    --bar-bg: #1e1e2e;
+    --bg: #0a0a0f; --surface: #12121a; --border: #1e1e2e;
+    --text: #e4e4ed; --muted: #6b6b7b;
+    --green: #2dd4bf; --red: #f87171; --amber: #fbbf24;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg); color: var(--text);
+    min-height: 100vh; display: flex; justify-content: center;
     padding: 80px 24px 48px;
   }
-  .main { width: 100%; max-width: 680px; }
-  h1 { font-size: 22px; font-weight: 500; letter-spacing: -0.3px; }
+  .main { width: 100%; max-width: 720px; }
+
+  /* Login */
+  .login-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 40px; text-align: center; max-width: 360px; margin: 120px auto;
+  }
+  .login-box h1 { font-size: 20px; margin-bottom: 8px; }
+  .login-box p { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+  .login-box input {
+    width: 100%; padding: 12px 16px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--bg);
+    color: var(--text); font-size: 15px; margin-bottom: 12px; outline: none;
+  }
+  .login-box input:focus { border-color: var(--green); }
+  .login-box button {
+    width: 100%; padding: 12px; border-radius: 8px; border: none;
+    background: var(--green); color: #000; font-size: 15px; font-weight: 600; cursor: pointer;
+  }
+  .login-box .err { color: var(--red); font-size: 13px; margin-top: 8px; }
+
+  /* Layout */
+  h1 { font-size: 22px; font-weight: 500; }
   .sub { color: var(--muted); font-size: 13px; margin: 4px 0 28px; }
   .section { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; margin: 32px 0 10px; }
 
@@ -35,17 +47,14 @@
     display: flex; align-items: center; gap: 14px;
     background: var(--surface); border: 1px solid var(--border);
     border-radius: 10px; padding: 18px 20px; margin-bottom: 8px;
-    transition: border-color 0.2s;
   }
-  .row:hover { border-color: #2a2a3e; }
   .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
   .dot.up   { background: var(--green); box-shadow: 0 0 8px rgba(45,212,191,0.5); }
   .dot.down { background: var(--red);   box-shadow: 0 0 8px rgba(248,113,113,0.5); }
   .info { flex: 1; min-width: 0; }
   .info .name { font-size: 15px; font-weight: 500; }
   .info .desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
-  .meta { text-align: right; flex-shrink: 0; }
-  .meta div { font-size: 12px; color: var(--muted); line-height: 1.6; }
+  .meta { text-align: right; flex-shrink: 0; font-size: 12px; color: var(--muted); line-height: 1.6; }
 
   .gauges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 8px; }
   .gauge {
@@ -54,15 +63,10 @@
   }
   .gauge .val { font-size: 22px; font-weight: 500; }
   .gauge .lbl { font-size: 11px; color: var(--muted); margin-top: 3px; }
-  .gauge .bar {
-    margin-top: 10px; height: 4px; border-radius: 2px; background: var(--bar-bg); overflow: hidden;
-  }
-  .gauge .bar div {
-    height: 100%; border-radius: 2px;
-    transition: width 0.8s ease;
-  }
+  .gauge .bar { margin-top: 10px; height: 4px; border-radius: 2px; background: #1e1e2e; overflow: hidden; }
+  .gauge .bar div { height: 100%; border-radius: 2px; transition: width 0.8s ease; }
 
-  .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+  .stats2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
   .stat {
     background: var(--surface); border: 1px solid var(--border);
     border-radius: 10px; padding: 16px; text-align: center;
@@ -70,161 +74,239 @@
   .stat .val { font-size: 20px; font-weight: 500; }
   .stat .lbl { font-size: 11px; color: var(--muted); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
 
+  /* detail card */
+  .detail {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 18px 20px; margin-bottom: 8px;
+  }
+  .detail h3 { font-size: 14px; font-weight: 600; margin-bottom: 10px; }
+  .detail pre {
+    background: var(--bg); border-radius: 8px; padding: 14px;
+    font-size: 12px; overflow-x: auto; white-space: pre-wrap; word-break: break-all;
+    max-height: 200px; overflow-y: auto; color: var(--muted);
+  }
+  .peer {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px;
+  }
+  .peer:last-child { border: none; }
+  .peer .ip { color: var(--green); font-weight: 500; }
+  .peer .traffic { color: var(--muted); font-size: 12px; }
+  .device-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px;
+  }
+  .device-row:last-child { border: none; }
+  .device-row .d-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .btn {
+    display: inline-block; padding: 8px 16px; border-radius: 8px;
+    font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text); text-decoration: none;
+  }
+  .btn:hover { border-color: var(--green); }
   .footer { text-align: center; color: var(--muted); font-size: 11px; margin-top: 32px; }
+  .logout { float: right; color: var(--muted); font-size: 12px; cursor: pointer; }
 </style>
 </head>
 <body>
-<div class="main">
+
+<!-- ====== 登录页 ====== -->
+<div id="login" class="main">
+  <div class="login-box">
+    <h1>Dashboard</h1>
+    <p>请输入密码查看服务器状态</p>
+    <input type="password" id="pw" placeholder="密码" autofocus>
+    <button onclick="login()">进入</button>
+    <div class="err" id="err"></div>
+  </div>
+</div>
+
+<!-- ====== 主面板 ====== -->
+<div id="dash" class="main" style="display:none">
+  <div class="logout" onclick="logout()">退出</div>
   <h1>Dashboard</h1>
   <p class="sub">clipbridge.ccttkx.xyz</p>
 
-  <!-- System -->
-  <div class="section">System</div>
+  <div class="section">系统</div>
   <div class="gauges">
-    <div class="gauge">
-      <div class="val" id="cpu">--</div>
-      <div class="lbl">CPU</div>
-      <div class="bar"><div style="width:0" id="cpu-bar"></div></div>
-    </div>
-    <div class="gauge">
-      <div class="val" id="mem">--</div>
-      <div class="lbl">Memory</div>
-      <div class="bar"><div style="width:0" id="mem-bar"></div></div>
-    </div>
-    <div class="gauge">
-      <div class="val" id="disk">--</div>
-      <div class="lbl">Disk Free</div>
-      <div class="bar"><div style="width:0" id="disk-bar"></div></div>
-    </div>
+    <div class="gauge"><div class="val" id="cpu">--</div><div class="lbl">CPU</div><div class="bar"><div style="width:0" id="cb"></div></div></div>
+    <div class="gauge"><div class="val" id="mem">--</div><div class="lbl">内存</div><div class="bar"><div style="width:0" id="mb"></div></div></div>
+    <div class="gauge"><div class="val" id="disk">--</div><div class="lbl">磁盘剩余</div><div class="bar"><div style="width:0" id="db"></div></div></div>
   </div>
 
-  <!-- Services -->
-  <div class="section">Services</div>
+  <div class="section">服务</div>
+  <div class="row"><div class="dot" id="b-dot"></div><div class="info"><div class="name">ClipBridge</div><div class="desc">E2E 剪贴板中继</div></div><div class="meta"><div id="b-up">--</div><div id="b-ms">--</div></div></div>
+  <div class="stats2"><div class="stat"><div class="val" id="b-u">--</div><div class="lbl">在线用户</div></div><div class="stat"><div class="val" id="b-d">--</div><div class="lbl">在线设备</div></div></div>
+  <div class="row"><div class="dot" id="s-dot"></div><div class="info"><div class="name">Shadowsocks</div><div class="desc">代理 :8388</div></div><div class="meta"><div id="s-ms">--</div></div></div>
+  <div class="row"><div class="dot" id="w-dot"></div><div class="info"><div class="name">WireGuard</div><div class="desc">VPN wg0</div></div><div class="meta"><div id="w-ms">--</div></div></div>
 
-  <div class="row">
-    <div class="dot" id="b-dot"></div>
-    <div class="info">
-      <div class="name">ClipBridge</div>
-      <div class="desc">E2E clipboard relay</div>
-    </div>
-    <div class="meta">
-      <div id="b-uptime">--</div>
-      <div id="b-latency">--</div>
-    </div>
-  </div>
+  <div class="section">ClipBridge 设备</div>
+  <div class="detail"><div id="dev-list">加载中…</div></div>
 
-  <div class="stats-row">
-    <div class="stat"><div class="val" id="b-users">--</div><div class="lbl">Users</div></div>
-    <div class="stat"><div class="val" id="b-devices">--</div><div class="lbl">Devices</div></div>
-  </div>
+  <div class="section">WireGuard 节点</div>
+  <div class="detail"><div id="wg-list">加载中…</div><div style="margin-top:12px"><button class="btn" id="wg-dl" style="display:none">下载配置文件</button></div></div>
 
-  <div class="row">
-    <div class="dot" id="s-dot"></div>
-    <div class="info">
-      <div class="name">Shadowsocks</div>
-      <div class="desc">Proxy :8388</div>
-    </div>
-    <div class="meta"><div id="s-latency">--</div></div>
-  </div>
+  <div class="section">Shadowsocks 连接</div>
+  <div class="detail"><div id="ss-info">加载中…</div></div>
 
-  <div class="row">
-    <div class="dot" id="w-dot"></div>
-    <div class="info">
-      <div class="name">WireGuard</div>
-      <div class="desc">VPN wg0</div>
-    </div>
-    <div class="meta"><div id="w-latency">--</div></div>
-  </div>
-
-  <div class="footer">Refreshed <span id="tick">--</span></div>
+  <div class="footer">刷新 <span id="tick">--</span></div>
 </div>
 
 <script>
-const BASE = '';
+let TOKEN = sessionStorage.getItem('dtok') || '';
 
-function uptime(s) {
-  if (!s || s <= 0) return '--';
-  const d = Math.floor(s / 86400);
-  const h = Math.floor((s % 86400) / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  if (d) return d + 'd ' + h + 'h';
-  if (h) return h + 'h ' + m + 'm';
-  return m + 'm';
+async function login() {
+  const pw = document.getElementById('pw').value;
+  try {
+    const r = await fetch('/dashboard/auth', {
+      method: 'POST', body: JSON.stringify({password: pw}),
+      headers: {'Content-Type': 'application/json'}
+    });
+    const d = await r.json();
+    if (d.token) {
+      TOKEN = d.token;
+      sessionStorage.setItem('dtok', TOKEN);
+      document.getElementById('login').style.display = 'none';
+      document.getElementById('dash').style.display = 'block';
+      document.getElementById('err').textContent = '';
+      tick();
+      setInterval(tick, 5000);
+    } else {
+      document.getElementById('err').textContent = d.error || '密码错误';
+    }
+  } catch { document.getElementById('err').textContent = '连接失败'; }
 }
 
-function barColor(pct) {
-  if (pct > 80) return 'var(--red)';
-  if (pct > 60) return 'var(--amber)';
-  return 'var(--green)';
+function logout() {
+  sessionStorage.removeItem('dtok');
+  TOKEN = '';
+  location.reload();
 }
+
+// Auto login
+if (TOKEN) {
+  document.getElementById('login').style.display = 'none';
+  document.getElementById('dash').style.display = 'block';
+  tick();
+  setInterval(tick, 5000);
+}
+document.getElementById('pw').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+
+// --- data ---
+
+function hdr() { return { headers: { Authorization: 'Bearer ' + TOKEN } }; }
 
 async function get(path) {
   const t0 = performance.now();
   try {
-    const r = await fetch(BASE + path, { signal: AbortSignal.timeout(5000) });
+    const r = await fetch(path, Object.assign({ signal: AbortSignal.timeout(5000) }, hdr()));
     return { ok: true, ms: Math.round(performance.now() - t0), data: await r.json() };
-  } catch {
-    return { ok: false, ms: Math.round(performance.now() - t0) };
-  }
+  } catch { return { ok: false, ms: Math.round(performance.now() - t0) }; }
+}
+
+function bar(v, el) { el.style.width = v + '%'; el.style.background = v > 80 ? 'var(--red)' : v > 60 ? 'var(--amber)' : 'var(--green)'; }
+
+function up(s) {
+  if (!s || s <= 0) return '--';
+  const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60);
+  if (d) return d + '天 ' + h + '时';
+  if (h) return h + '时 ' + m + '分';
+  return m + '分';
+}
+
+function traffic(b) {
+  if (!b || b < 0) return '0 B';
+  if (b > 1e9) return (b / 1e9).toFixed(1) + ' GB';
+  if (b > 1e6) return (b / 1e6).toFixed(1) + ' MB';
+  if (b > 1e3) return (b / 1e3).toFixed(1) + ' KB';
+  return b + ' B';
 }
 
 async function tick() {
-  const [sys, b, s, w] = await Promise.all([
-    get('/stats/system'),
-    get('/stats'),
-    get('/proxy/shadowsocks'),
-    get('/proxy/wireguard'),
+  if (!TOKEN) return;
+  const [sys, b, s, w, dev, wg, ss] = await Promise.all([
+    get('/stats/system'), get('/stats'), get('/proxy/shadowsocks'), get('/proxy/wireguard'),
+    get('/dashboard/devices'), get('/dashboard/wireguard'), get('/dashboard/shadowsocks'),
   ]);
 
   // System
   if (sys.ok) {
     const cpu = sys.data.cpu_percent || 0;
-    const memUsed = sys.data.mem_total_mb - (sys.data.mem_avail_mb || 0);
-    const memPct = sys.data.mem_total_mb ? (memUsed / sys.data.mem_total_mb * 100) : 0;
-    const diskPct = sys.data.disk_total_gb ? ((sys.data.disk_total_gb - sys.data.disk_avail_gb) / sys.data.disk_total_gb * 100) : 0;
-
-    document.getElementById('cpu').textContent = cpu + '%';
-    document.getElementById('cpu-bar').style.width = cpu + '%';
-    document.getElementById('cpu-bar').style.background = barColor(cpu);
-
-    document.getElementById('mem').textContent = Math.round(memUsed) + ' / ' + sys.data.mem_total_mb + ' MB';
-    document.getElementById('mem-bar').style.width = memPct + '%';
-    document.getElementById('mem-bar').style.background = barColor(memPct);
-
-    document.getElementById('disk').textContent = (sys.data.disk_avail_gb || 0).toFixed(0) + ' GB';
-    document.getElementById('disk-bar').style.width = (100 - diskPct) + '%';
-    document.getElementById('disk-bar').style.background = barColor(100 - diskPct);
+    const mu = sys.data.mem_total_mb - (sys.data.mem_avail_mb || 0);
+    const mp = sys.data.mem_total_mb ? mu / sys.data.mem_total_mb * 100 : 0;
+    const dp = sys.data.disk_total_gb ? (sys.data.disk_total_gb - sys.data.disk_avail_gb) / sys.data.disk_total_gb * 100 : 0;
+    document.getElementById('cpu').textContent = cpu + '%'; bar(cpu, document.getElementById('cb'));
+    document.getElementById('mem').textContent = Math.round(mu) + ' / ' + sys.data.mem_total_mb + ' MB'; bar(mp, document.getElementById('mb'));
+    document.getElementById('disk').textContent = (sys.data.disk_avail_gb || 0).toFixed(0) + ' GB'; bar(100 - dp, document.getElementById('db'));
   }
 
-  // ClipBridge
+  // Bridge
   const bd = document.getElementById('b-dot');
   if (b.ok) {
     bd.className = 'dot up';
-    document.getElementById('b-uptime').textContent = uptime(b.data.uptime_seconds) || '--';
-    document.getElementById('b-latency').textContent = b.ms + 'ms';
-    document.getElementById('b-users').textContent = b.data.users ?? '--';
-    document.getElementById('b-devices').textContent = b.data.devices ?? '--';
-  } else {
-    bd.className = 'dot down';
-    document.getElementById('b-uptime').textContent = 'offline';
-    document.getElementById('b-latency').textContent = '--';
-    document.getElementById('b-users').textContent = '--';
-    document.getElementById('b-devices').textContent = '--';
-  }
+    document.getElementById('b-up').textContent = up(b.data.uptime_seconds);
+    document.getElementById('b-ms').textContent = b.ms + 'ms';
+    document.getElementById('b-u').textContent = b.data.users ?? '--';
+    document.getElementById('b-d').textContent = b.data.devices ?? '--';
+  } else { bd.className = 'dot down'; document.getElementById('b-up').textContent = '离线'; }
 
   // Shadowsocks
   document.getElementById('s-dot').className = 'dot ' + (s.ok && s.data.online ? 'up' : 'down');
-  document.getElementById('s-latency').textContent = s.ms ? s.ms + 'ms' : '--';
+  document.getElementById('s-ms').textContent = s.ms ? s.ms + 'ms' : '--';
 
   // WireGuard
   document.getElementById('w-dot').className = 'dot ' + (w.ok && w.data.online ? 'up' : 'down');
-  document.getElementById('w-latency').textContent = w.ms ? w.ms + 'ms' : '--';
+  document.getElementById('w-ms').textContent = w.ms ? w.ms + 'ms' : '--';
+
+  // Devices
+  if (dev.ok && dev.data.devices) {
+    let h = '';
+    for (const d of dev.data.devices) {
+      const on = d.online ? 'up' : 'down';
+      h += '<div class="device-row"><div class="d-dot ' + on + '"></div><span style="flex:1">' + esc(d.name) + '</span><span style="color:var(--muted);font-size:12px">' + esc(d.platform) + ' · ' + (d.online ? '在线' : '离线') + (d.revoked ? ' · 已撤销' : '') + '</span></div>';
+    }
+    document.getElementById('dev-list').innerHTML = h || '暂无设备';
+  }
+
+  // WireGuard peers
+  if (wg.ok) {
+    let h = '';
+    for (const p of wg.data.peers || []) {
+      h += '<div class="peer"><div><div>' + esc(p.public_key.substring(0, 12)) + '…</div><div class="ip">' + esc(p.allowed_ips) + '</div></div><div style="text-align:right"><div class="traffic">↓' + traffic(p.tx_bytes) + ' ↑' + traffic(p.rx_bytes) + '</div><div style="font-size:11px;color:var(--muted)">' + p.last_handshake + '</div></div></div>';
+    }
+    document.getElementById('wg-list').innerHTML = h || '暂无节点';
+    const btn = document.getElementById('wg-dl');
+    if (wg.data.config) {
+      btn.style.display = 'inline-block';
+      btn.onclick = function() {
+        const b = new Blob([wg.data.config], {type: 'text/plain'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'wg0.conf'; a.click();
+      };
+    }
+  }
+
+  // Shadowsocks details
+  if (ss.ok) {
+    const c = ss.data.config || {};
+    let h = '<div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:12px">';
+    h += '<div><span style="color:var(--muted)">端口</span> ' + (c.server_port || '--') + '</div>';
+    h += '<div><span style="color:var(--muted)">加密</span> ' + (c.method || '--') + '</div>';
+    h += '<div><span style="color:var(--muted)">连接数</span> ' + (ss.data.conn_count || 0) + '</div>';
+    h += '</div>';
+    if (ss.data.connections && ss.data.connections.length > 0) {
+      for (const cn of ss.data.connections) {
+        h += '<div class="device-row"><span style="flex:1">' + esc(cn.client) + '</span><span style="color:var(--green);font-size:12px">' + cn.status + '</span></div>';
+      }
+    }
+    document.getElementById('ss-info').innerHTML = h;
+  }
 
   document.getElementById('tick').textContent = new Date().toLocaleTimeString('zh-CN');
 }
 
-tick();
-setInterval(tick, 5000);
+function esc(s) {
+  const d = document.createElement('div'); d.textContent = s; return d.innerHTML;
+}
 </script>
 </body>
 </html>
