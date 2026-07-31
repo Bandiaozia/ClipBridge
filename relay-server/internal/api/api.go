@@ -3,11 +3,8 @@ package api
 import (
 	"bufio"
 	"context"
-	"crypto/rand"
 	"database/sql"
-	_ "embed"
 	"encoding/base64"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -33,9 +30,6 @@ import (
 )
 
 type contextKey int
-
-//go:embed dashboard.html
-var dashboardHTML string
 
 const (
 	claimsKey contextKey = iota
@@ -73,11 +67,8 @@ func New(store *service.Store, tokens *auth.TokenManager, hub *clipws.Hub,
 	mux.HandleFunc("GET /proxy/shadowsocks", api.proxyShadowsocks)
 	mux.HandleFunc("GET /proxy/wireguard", api.proxyWireGuard)
 	// Dashboard
-	mux.HandleFunc("GET /dashboard", api.dashPage)
-	mux.HandleFunc("POST /dashboard/auth", api.dashAuth)
-	mux.HandleFunc("GET /dashboard/devices", api.dashDevices)
-	mux.HandleFunc("GET /dashboard/wireguard", api.dashWireGuard)
-	mux.HandleFunc("GET /dashboard/shadowsocks", api.dashShadowsocks)
+	mux.HandleFunc("GET /dashboard", func(w http.ResponseWriter, r *http.Request) { api.dashPage(w, r) })
+	mux.HandleFunc("POST /dashboard", api.dashLogin)
 	mux.HandleFunc("POST /api/v1/auth/register", api.register)
 	mux.HandleFunc("POST /api/v1/auth/login", api.login)
 	mux.HandleFunc("POST /api/v1/auth/refresh", api.refresh)
@@ -481,173 +472,6 @@ func (a *API) proxyWireGuard(w http.ResponseWriter, r *http.Request) {
 	_, err := os.Lstat("/sys/class/net/wg0")
 	online := err == nil
 	a.write(w, http.StatusOK, map[string]any{"online": online})
-}
-
-// -- Dashboard handlers --
-
-func (a *API) dashPage(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Write([]byte(dashboardHTML))
-}
-
-func (a *API) dashAuth(w http.ResponseWriter, r *http.Request) {
-	var body struct{ Password string }
-	if json.NewDecoder(r.Body).Decode(&body) != nil || body.Password == "" {
-		a.write(w, http.StatusUnauthorized, map[string]any{"error": "需要密码"})
-		return
-	}
-	if a.dashboardPass == "" || body.Password != a.dashboardPass {
-		a.write(w, http.StatusUnauthorized, map[string]any{"error": "密码错误"})
-		return
-	}
-	tok := make([]byte, 32)
-	rand.Read(tok)
-	token := hex.EncodeToString(tok)
-	a.dashboardMu.Lock()
-	a.dashboardSecrets[token] = time.Now().Add(24 * time.Hour).UnixMilli()
-	// 清理过期 token
-	for k, v := range a.dashboardSecrets {
-		if v < time.Now().UnixMilli() { delete(a.dashboardSecrets, k) }
-	}
-	a.dashboardMu.Unlock()
-	a.write(w, http.StatusOK, map[string]any{"token": token})
-}
-
-func (a *API) dashCheck(r *http.Request) bool {
-	tok := r.Header.Get("Authorization")
-	tok = strings.TrimPrefix(tok, "Bearer ")
-	if tok == "" { tok = r.URL.Query().Get("token") }
-	if tok == "" { return false }
-	a.dashboardMu.Lock()
-	exp, ok := a.dashboardSecrets[tok]
-	a.dashboardMu.Unlock()
-	return ok && exp > time.Now().UnixMilli()
-}
-
-func (a *API) dashDevices(w http.ResponseWriter, r *http.Request) {
-	if !a.dashCheck(r) { a.write(w, http.StatusUnauthorized, map[string]any{"error": "未授权"}); return }
-	hubStats := a.hub.Stats()
-	rows, err := a.db.QueryContext(r.Context(),
-		`SELECT id, user_id, name, platform, revoked_at FROM devices ORDER BY created_at`)
-	type devInfo struct {
-		Name    string `json:"name"`
-		Plat    string `json:"platform"`
-		Online  bool   `json:"online"`
-		Revoked bool   `json:"revoked"`
-	}
-	list := []devInfo{}
-	if err == nil {
-		defer rows.Close()
-		for rows.Next() {
-			var id, uid, name, plat string
-			var revoked *int64
-			if rows.Scan(&id, &uid, &name, &plat, &revoked) != nil { continue }
-			list = append(list, devInfo{
-				Name: name, Plat: plat,
-				Online:  a.hub.IsOnline(uid, id),
-				Revoked: revoked != nil,
-			})
-		}
-	}
-	a.write(w, http.StatusOK, map[string]any{
-		"devices":      list,
-		"total":        len(list),
-		"online_users": hubStats.Users,
-	})
-}
-
-func (a *API) dashWireGuard(w http.ResponseWriter, r *http.Request) {
-	if !a.dashCheck(r) { a.write(w, http.StatusUnauthorized, map[string]any{"error": "未授权"}); return }
-	// 读配置
-	cfg, _ := os.ReadFile("/etc/wireguard/wg0.conf")
-
-	// 读 peer 信息
-	out, err := os.ReadFile("/tmp/wg-dump")
-	type peerInfo struct {
-		PublicKey  string `json:"public_key"`
-		AllowedIPs string `json:"allowed_ips"`
-		Endpoint   string `json:"endpoint"`
-		Handshake  string `json:"last_handshake"`
-		RxBytes    int64  `json:"rx_bytes"`
-		TxBytes    int64  `json:"tx_bytes"`
-	}
-	peers := []peerInfo{}
-	if err == nil {
-		lines := strings.Split(strings.TrimSpace(string(out)), "\n")
-		for i, line := range lines {
-			if i == 0 { continue } // skip interface line
-			parts := strings.Split(line, "\t")
-			if len(parts) < 8 { continue }
-			rx, _ := strconv.ParseInt(parts[5], 10, 64)
-			tx, _ := strconv.ParseInt(parts[6], 10, 64)
-			hs := "--"
-			if parts[4] != "0" {
-				if sec, _ := strconv.ParseInt(parts[4], 10, 64); sec > 0 {
-					hs = fmt.Sprintf("%s ago", formatSec(time.Now().Unix()-sec))
-				}
-			}
-			peers = append(peers, peerInfo{parts[0], parts[3], parts[2], hs, rx, tx})
-		}
-	}
-
-	// 脱敏配置文件（隐藏私钥）
-	cfgStr := string(cfg)
-	cfgStr = hideKey(cfgStr, "PrivateKey")
-
-	a.write(w, http.StatusOK, map[string]any{
-		"config": cfgStr,
-		"peers":  peers,
-	})
-}
-
-func (a *API) dashShadowsocks(w http.ResponseWriter, r *http.Request) {
-	if !a.dashCheck(r) { a.write(w, http.StatusUnauthorized, map[string]any{"error": "未授权"}); return }
-	cfg, _ := os.ReadFile("/etc/shadowsocks-libev/config.json")
-	var ssCfg map[string]any
-	json.Unmarshal(cfg, &ssCfg)
-
-	// 读活跃连接（宿主机 cron 每分钟写入 /tmp/ss-connections）
-	type connInfo struct {
-		Client string `json:"client"`
-		Status string `json:"status"`
-	}
-	conns := []connInfo{}
-	data, _ := os.ReadFile("/tmp/ss-connections")
-	for _, line := range strings.Split(strings.TrimSpace(string(data)), "\n") {
-		ip := strings.TrimSpace(line)
-		if ip != "" {
-			conns = append(conns, connInfo{Client: ip, Status: "已连接"})
-		}
-	}
-	countData, _ := os.ReadFile("/tmp/ss-count")
-	connCount, _ := strconv.Atoi(strings.TrimSpace(string(countData)))
-
-	// 脱敏密码
-	if pw, ok := ssCfg["password"].(string); ok { ssCfg["password"] = pw[:4] + "****" }
-	a.write(w, http.StatusOK, map[string]any{
-		"config":      ssCfg,
-		"connections": conns,
-		"conn_count":  connCount,
-	})
-}
-
-func hideKey(s, key string) string {
-	idx := strings.Index(s, key)
-	if idx < 0 { return s }
-	end := strings.Index(s[idx:], "\n")
-	if end < 0 { end = len(s[idx:]) }
-	line := s[idx : idx+end]
-	if eq := strings.Index(line, "="); eq > 0 {
-		return s[:idx] + key + " = ****" + s[idx+end:]
-	}
-	return s
-}
-
-func formatSec(sec int64) string {
-	if sec < 60 { return fmt.Sprintf("%ds", sec) }
-	if sec < 3600 { return fmt.Sprintf("%dm", sec/60) }
-	if sec < 86400 { return fmt.Sprintf("%dh", sec/3600) }
-	return fmt.Sprintf("%dd", sec/86400)
 }
 
 func (a *API) requireAuth(next http.Handler) http.Handler {
