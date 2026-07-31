@@ -255,61 +255,46 @@ func getShadowsocks() (ssCfgInfo, []string, int) {
 // -- HTML --
 
 const panelHTML = `
-<div id="app"><div class="header"><div><h1>Dashboard</h1><div class="sub">clipbridge.ccttkx.xyz</div></div><span class="tick" id="tick">--</span></div>
-
-<div class="section-title">系统</div>
-<div class="gauges">
-  <div class="g"><div class="gv" id="g-cpu">--</div><div class="gl">CPU</div><div class="bar"><div id="b-cpu"></div></div></div>
-  <div class="g"><div class="gv" id="g-mem">--</div><div class="gl">内存</div><div class="bar"><div id="b-mem"></div></div></div>
-  <div class="g"><div class="gv" id="g-disk">--</div><div class="gl">磁盘剩余</div><div class="bar"><div id="b-disk"></div></div></div>
+<div id="app">
+<div class="topbar">
+  <div><span class="logo">&#9670;</span><span class="host">clipbridge.ccttkx.xyz</span></div>
+  <span class="tick" id="tick"></span>
 </div>
 
-<div class="section-title">服务</div>
+<div class="gauges">
+  <div class="g"><svg class="gr" viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" fill="none" stroke="var(--border)" stroke-width="3"/><circle id="cpu-ring" cx="18" cy="18" r="15" fill="none" stroke="var(--green)" stroke-width="3" stroke-dasharray="0 94" stroke-linecap="round" transform="rotate(-90 18 18)"/></svg><div class="gv" id="g-cpu">--</div><div class="gl">CPU</div></div>
+  <div class="g"><svg class="gr" viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" fill="none" stroke="var(--border)" stroke-width="3"/><circle id="mem-ring" cx="18" cy="18" r="15" fill="none" stroke="var(--green)" stroke-width="3" stroke-dasharray="0 94" stroke-linecap="round" transform="rotate(-90 18 18)"/></svg><div class="gv" id="g-mem">--</div><div class="gl">Memory</div></div>
+  <div class="g"><svg class="gr" viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" fill="none" stroke="var(--border)" stroke-width="3"/><circle id="disk-ring" cx="18" cy="18" r="15" fill="none" stroke="var(--green)" stroke-width="3" stroke-dasharray="0 94" stroke-linecap="round" transform="rotate(-90 18 18)"/></svg><div class="gv" id="g-disk">--</div><div class="gl">Disk</div></div>
+</div>
 
 <div class="svc" id="svc-cb">
-  <div class="svc-h" onclick="tgl('cb')"><div class="dot d0" id="d-cb"></div><div class="svc-n">ClipBridge 中继</div><div class="svc-s" id="s-cb">--</div><span class="arr" id="a-cb">▼</span></div>
-  <div class="svc-b hidden" id="b-cb">
-    <div class="row"><span class="lbl">在线用户</span><span id="cb-users">--</span></div>
-    <div class="row"><span class="lbl">在线设备</span><span id="cb-devs">--</span></div>
-    <div id="cb-list"></div>
+  <div class="svc-h" onclick="tgl('cb')">
+    <div class="svc-icon cb">&#9769;</div>
+    <div class="svc-n">ClipBridge<span class="svc-desc">E2E 剪贴板中继</span></div>
+    <div class="svc-s" id="s-cb"></div>
+    <span class="arr" id="a-cb">&#9660;</span>
   </div>
+  <div class="svc-b hidden" id="b-cb"></div>
 </div>
 
 <div class="svc" id="svc-wg">
-  <div class="svc-h" onclick="tgl('wg')"><div class="dot d0" id="d-wg"></div><div class="svc-n">WireGuard VPN</div><div class="svc-s" id="s-wg">--</div><span class="arr" id="a-wg">▼</span></div>
-  <div class="svc-b hidden" id="b-wg">
-    <div class="row"><span class="lbl">监听端口</span>51820</div>
-    <div class="row"><span class="lbl">地址段</span><span class="v0">10.0.0.1/24</span></div>
-    <div id="wg-list"></div>
-    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn" onclick="showWGF('add')">+ 添加节点</button>
-      <button class="btn" onclick="dload('wg')">导出配置</button>
-      <button class="btn" onclick="action('wg','down')">停止服务</button>
-      <button class="btn" onclick="action('wg','up')">启动服务</button>
-    </div>
-    <div class="cfg" id="wg-cfg"></div>
-    <div class="form hidden" id="wg-add">
-      <input placeholder="公钥" id="wg-pk"><input placeholder="IP (如 10.0.0.5/32)" id="wg-ip">
-      <button class="btn" onclick="action('wg','add')">确认添加</button><button class="btn" onclick="showWGF('')">取消</button>
-    </div>
+  <div class="svc-h" onclick="tgl('wg')">
+    <div class="svc-icon wg">&#9881;</div>
+    <div class="svc-n">WireGuard<span class="svc-desc">VPN 隧道</span></div>
+    <div class="svc-s" id="s-wg"></div>
+    <span class="arr" id="a-wg">&#9660;</span>
   </div>
+  <div class="svc-b hidden" id="b-wg"></div>
 </div>
 
 <div class="svc" id="svc-ss">
-  <div class="svc-h" onclick="tgl('ss')"><div class="dot d0" id="d-ss"></div><div class="svc-n">Shadowsocks</div><div class="svc-s" id="s-ss">--</div><span class="arr" id="a-ss">▼</span></div>
-  <div class="svc-b hidden" id="b-ss">
-    <div class="row"><span class="lbl">端口</span><span id="ss-port">--</span></div>
-    <div class="row"><span class="lbl">加密</span><span id="ss-method">--</span></div>
-    <div class="row"><span class="lbl">密码</span><span id="ss-pass">--</span></div>
-    <div class="row"><span class="lbl">活跃连接</span><span id="ss-count">--</span></div>
-    <div id="ss-list"></div>
-    <div style="margin-top:10px;display:flex;gap:8px">
-      <button class="btn" onclick="dload('ss')">导出配置</button>
-      <button class="btn" onclick="action('ss','down')">停止服务</button>
-      <button class="btn" onclick="action('ss','up')">启动服务</button>
-    </div>
-    <div class="cfg" id="ss-cfg"></div>
+  <div class="svc-h" onclick="tgl('ss')">
+    <div class="svc-icon ss">&#10004;</div>
+    <div class="svc-n">Shadowsocks<span class="svc-desc">代理 · :8388</span></div>
+    <div class="svc-s" id="s-ss"></div>
+    <span class="arr" id="a-ss">&#9660;</span>
   </div>
+  <div class="svc-b hidden" id="b-ss"></div>
 </div>
 </div>`
 
@@ -338,144 +323,161 @@ func formatSec(sec int64) string {
 // -- Page template --
 
 const pageHead = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dashboard</title><style>
-:root{--bg:#0a0a0f;--s:#12121a;--b:#1e1e2e;--t:#e4e4ed;--m:#6b6b7b;--g:#2dd4bf;--r:#f87171;--a:#fbbf24}
+:root{--bg:#060608;--card:#0d0d14;--border:#1a1a28;--text:#e0e0ec;--muted:#5c5c72;--green:#2dd4bf;--red:#f87171;--amber:#fbbf24;--blue:#60a5fa}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--t);min-height:100vh;display:flex;justify-content:center;padding:40px 24px}
-.main{width:100%;max-width:740px}
-.login-box{background:var(--s);border:1px solid var(--b);border-radius:12px;padding:40px;text-align:center;max-width:360px;margin:120px auto}
-.login-box h1{font-size:20px;margin-bottom:8px}
-.login-box p{color:var(--m);font-size:13px;margin-bottom:24px}
-.login-box input{width:100%;padding:12px 16px;border-radius:8px;border:1px solid var(--b);background:var(--bg);color:var(--t);font-size:15px;margin-bottom:12px;outline:none}
-.login-box input:focus{border-color:var(--g)}
-.login-box button{width:100%;padding:12px;border-radius:8px;border:none;background:var(--g);color:#000;font-size:15px;font-weight:600;cursor:pointer}
-.login-box .err{color:var(--r);font-size:13px;margin-top:8px}
-.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px}
-h1{font-size:22px;font-weight:500}.sub{color:var(--m);font-size:12px;margin-top:2px}
-.tick{color:var(--m);font-size:11px}
-.section-title{color:var(--m);font-size:11px;text-transform:uppercase;letter-spacing:.8px;margin:20px 0 8px}
-.gauges{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:4px}
-.g{background:var(--s);border:1px solid var(--b);border-radius:10px;padding:14px;text-align:center}
-.gv{font-size:20px;font-weight:500}.gl{font-size:10px;color:var(--m);margin-top:2px}
-.bar{margin-top:8px;height:4px;border-radius:2px;background:#1e1e2e;overflow:hidden}
-.bar div{height:100%;border-radius:2px;transition:width .5s}
-.svc{margin-bottom:6px}
-.svc-h{display:flex;align-items:center;gap:12px;background:var(--s);border:1px solid var(--b);border-radius:10px;padding:16px 18px;cursor:pointer;transition:border-radius .2s}
-.svc.open .svc-h{border-radius:10px 10px 0 0;border-bottom-color:transparent}
-.svc-h:hover{border-color:#2a2a3e}
-.svc-n{flex:1;font-size:14px;font-weight:500}
-.svc-s{font-size:12px;color:var(--m)}
-.arr{color:var(--m);font-size:11px;transition:transform .2s}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;justify-content:center;padding:48px 24px 64px}
+.main{width:100%;max-width:680px}
+/* login */
+.login-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:48px;text-align:center;max-width:360px;margin:140px auto}
+.login-box h1{font-size:22px;font-weight:600;letter-spacing:-0.3px;margin-bottom:6px}
+.login-box p{color:var(--muted);font-size:14px;margin-bottom:28px}
+.login-box input{width:100%;padding:14px 18px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:15px;margin-bottom:14px;outline:none;transition:border-color .2s}
+.login-box input:focus{border-color:var(--green)}
+.login-box button{width:100%;padding:14px;border-radius:10px;border:none;background:var(--green);color:#000;font-size:15px;font-weight:600;cursor:pointer;transition:opacity .2s}
+.login-box button:hover{opacity:.85}
+.login-box .err{color:var(--red);font-size:13px;margin-top:10px}
+/* topbar */
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:36px}
+.logo{font-size:18px;color:var(--green);margin-right:10px}
+.host{color:var(--text);font-size:14px;font-weight:500;letter-spacing:-0.2px}
+.tick{color:var(--muted);font-size:12px}
+/* gauges */
+.gauges{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:32px}
+.g{position:relative;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 16px 18px;text-align:center}
+.gv{font-size:28px;font-weight:600;letter-spacing:-0.5px;margin:4px 0;position:relative;z-index:1}
+.gl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.gr{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:56px;height:56px}
+/* services */
+.svc{margin-bottom:10px}
+.svc-h{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 22px;cursor:pointer;transition:border-color .2s,border-radius .3s}
+.svc-h:hover{border-color:#28283e}
+.svc.open .svc-h{border-radius:14px 14px 0 0;border-bottom-color:transparent}
+.svc-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.svc-icon.cb{background:rgba(45,212,191,.1);color:var(--green)}
+.svc-icon.wg{background:rgba(96,165,250,.1);color:var(--blue)}
+.svc-icon.ss{background:rgba(45,212,191,.1);color:var(--green)}
+.svc-n{flex:1;font-size:15px;font-weight:500;line-height:1.3}
+.svc-desc{display:block;font-size:12px;color:var(--muted);font-weight:400;margin-top:1px}
+.svc-s{font-size:12px;color:var(--muted);text-align:right;line-height:1.4}
+.arr{color:var(--muted);font-size:10px;transition:transform .3s;flex-shrink:0}
 .svc.open .arr{transform:rotate(180deg)}
-.svc-b{background:var(--s);border:1px solid var(--b);border-top:none;border-radius:0 0 10px 10px;padding:12px 18px 16px}
+.svc-b{background:var(--card);border:1px solid var(--border);border-top:none;border-radius:0 0 14px 14px;padding:4px 22px 22px;overflow:hidden;animation:slideDown .25s ease}
 .svc-b.hidden{display:none}
-.row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--b);font-size:13px}
-.row:last-child{border:none}
-.lbl{color:var(--m)}.v0{color:var(--g)}.v1{color:var(--r)}
-.dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}
-.d0{background:var(--g);box-shadow:0 0 8px rgba(45,212,191,.5)}
-.d1{background:var(--r);box-shadow:0 0 8px rgba(248,113,113,.5)}
-.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500}
-.t0{background:rgba(45,212,191,.12);color:var(--g)}.t1{background:rgba(248,113,113,.12);color:var(--r)}.t2{background:rgba(251,191,36,.12);color:var(--a)}
-.btn{padding:7px 14px;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--b);background:var(--s);color:var(--t);white-space:nowrap}
-.btn:hover{border-color:var(--g)}.btn.danger{color:var(--r);border-color:var(--r)}
-.cfg{background:var(--bg);border-radius:8px;padding:12px;font-size:11px;white-space:pre-wrap;word-break:break-all;max-height:160px;overflow-y:auto;color:var(--m);margin-top:10px;display:none}
-.form{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}.form input{padding:7px 10px;border-radius:6px;border:1px solid var(--b);background:var(--bg);color:var(--t);font-size:13px;flex:1;min-width:150px;outline:none}
-.form.hidden{display:none}
-.ft{text-align:center;color:var(--m);font-size:11px;margin-top:24px}
+@keyframes slideDown{from{opacity:0;max-height:0}to{opacity:1;max-height:2000px}}
+/* rows */
+.row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;font-size:13px}
+.row+.row{border-top:1px solid rgba(255,255,255,.04)}
+.lbl{color:var(--muted);font-size:13px}
+.v0{color:var(--green);font-weight:500}
+/* tags */
+.tag{display:inline-block;padding:3px 10px;border-radius:5px;font-size:11px;font-weight:500}
+.t0{background:rgba(45,212,191,.1);color:var(--green)}.t1{background:rgba(248,113,113,.1);color:var(--red)}.t2{background:rgba(251,191,36,.1);color:var(--amber)}
+/* buttons */
+.btn{padding:8px 16px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text);transition:all .15s;white-space:nowrap}
+.btn:hover{border-color:var(--green);color:var(--green)}
+.btn.danger:hover{border-color:var(--red);color:var(--red)}
+.btn-group{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.04)}
+/* form */
+.f-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.f-row input{padding:9px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;flex:1;min-width:140px;outline:none;transition:border-color .2s}
+.f-row input:focus{border-color:var(--green)}
+.f-row.hidden{display:none}
+/* config */
+.cfg{background:var(--bg);border-radius:10px;padding:14px;font-size:12px;white-space:pre-wrap;word-break:break-all;max-height:180px;overflow-y:auto;color:var(--muted);margin-top:12px;display:none;border:1px solid var(--border)}
+/* peer card */
+.peer{border:1px solid var(--border);border-radius:10px;padding:14px;margin-top:8px}
+.peer-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.peer-key{font-size:12px;color:var(--muted);font-family:monospace}
+.peer-ip{font-size:14px;font-weight:600;color:var(--green)}
+.peer-meta{display:flex;gap:20px;font-size:11px;color:var(--muted);margin-top:6px}
 </style></head><body><div class="main">`
 
-const pageFoot = `<div class="ft">Dashboard · SecureCore</div></div><script>
-var D=window._INIT||{};
+const pageFoot = `</div><script>
+var D=window._INIT||{},C=94.25;
 function $(id){return document.getElementById(id)}
-function bar(v,id){var e=$(id);e.style.width=v+'%';e.style.background=v>80?'var(--r)':v>60?'var(--a)':'var(--g)'}
+function ring(id,pct){var r=$(id),d=C*pct/100;r.setAttribute('stroke-dasharray',d+' '+(C-d));r.setAttribute('stroke',pct>80?'var(--red)':pct>60?'var(--amber)':'var(--green)')}
 function up(s){if(!s||s<=0)return'--';var d=Math.floor(s/86400),h=Math.floor((s%86400)/3600),m=Math.floor((s%3600)/60);if(d)return d+'天 '+h+'时';if(h)return h+'时 '+m+'分';return m+'分'}
 function tgl(id){var b=$('b-'+id);b.classList.toggle('hidden');var s=$('svc-'+id);s.classList.toggle('open')}
 
 function render(d){
-  $('g-cpu').textContent=d.cpu;bar(d.cpu_pct,'b-cpu');
-  $('g-mem').textContent=d.mem;bar(d.mem_pct,'b-mem');
-  $('g-disk').textContent=d.disk+' GB';bar(d.disk_pct,'b-disk');
+  $('g-cpu').textContent=d.cpu;ring('cpu-ring',d.cpu_pct);
+  $('g-mem').textContent=d.mem;ring('mem-ring',d.mem_pct);
+  $('g-disk').textContent=d.disk+' GB';ring('disk-ring',d.disk_pct);
   $('tick').textContent=new Date().toLocaleTimeString('zh-CN');
 
   // ClipBridge
-  $('d-cb').className='dot d0';
-  $('s-cb').textContent='运行中 · '+up(d.uptime);
-  $('cb-users').textContent=d.users||'--';
-  $('cb-devs').textContent=d.online_devices||'--';
-  var devs=d.devices||[],h='';
+  $('s-cb').innerHTML='运行中<br>'+up(d.uptime);
+  var ch='<div class="row"><span class="lbl">在线用户</span><span>'+d.users+'</span></div>';
+  ch+='<div class="row"><span class="lbl">在线设备</span><span>'+(d.online_devices||0)+'</span></div>';
+  var devs=d.devices||[];
   for(var i=0;i<devs.length;i++){
     var dd=devs[i],tag='t1',label='离线';
     if(dd.Revoked){tag='t2';label='已撤销'}else if(dd.Online){tag='t0';label='在线'}
-    h+='<div class="row"><span>'+esc(dd.Name)+'</span><span><span style="color:var(--m);font-size:11px;margin-right:6px">'+esc(dd.Plat)+'</span><span class="tag '+tag+'">'+label+'</span></span></div>'
+    ch+='<div class="row"><span>'+esc(dd.Name)+'</span><span><span style="color:var(--muted);font-size:11px;margin-right:8px">'+esc(dd.Plat)+'</span><span class="tag '+tag+'">'+label+'</span></span></div>'
   }
-  $('cb-list').innerHTML=h||'<div class="row"><span class="lbl">暂无设备</span></div>';
+  $('b-cb').innerHTML=ch;
 
   // WireGuard
   var peers=d.wg_peers||[];
-  $('d-wg').className='dot '+(peers.length?'d0':'d1');
-  $('s-wg').textContent=peers.length+' 节点';
-  var wh='';
+  $('s-wg').innerHTML=(peers.length||0)+' 节点';
+  var wh='<div class="row"><span class="lbl">端口</span>51820</div><div class="row"><span class="lbl">地址段</span><span class="v0">10.0.0.1/24</span></div>';
   for(var i=0;i<peers.length;i++){
     var p=peers[i];
-    wh+='<div class="row" style="flex-wrap:wrap"><div style="width:100%;display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px">'+esc(p.Key.substring(0,14))+'…</span><button class="btn danger" onclick="action(\'wg\',\'remove\',\''+p.Key+'\')">删除</button></div><div style="width:100%;display:flex;justify-content:space-between;margin-top:4px"><span class="v0" style="font-size:12px">'+esc(p.IP)+'</span><span style="font-size:11px;color:var(--m)">↓'+p.Tx+' ↑'+p.Rx+'</span></div><div style="width:100%;display:flex;justify-content:space-between;margin-top:2px"><span style="font-size:11px;color:var(--m)">'+esc(p.EP)+'</span><span style="font-size:11px;color:var(--m)">'+p.HS+'</span></div></div>'
+    wh+='<div class="peer"><div class="peer-head"><span class="peer-key">'+esc(p.Key.substring(0,16))+'…</span><button class="btn danger" onclick="action(\'wg\',\'remove\',\''+p.Key+'\')">&#10005;</button></div><div class="peer-ip">'+esc(p.IP)+'</div><div class="peer-meta"><span>'+esc(p.EP)+'</span><span>'+p.HS+'</span><span>↓'+p.Tx+' ↑'+p.Rx+'</span></div></div>'
   }
-  $('wg-list').innerHTML=wh||'<div class="row"><span class="lbl">暂无节点</span></div>';
-  if(d.wg_config){$('wg-cfg').textContent=d.wg_config;$('wg-cfg').style.display='none'}
+  wh+='<div class="btn-group"><button class="btn" onclick="showWGF(\'add\')">+ 添加节点</button><button class="btn" onclick="dload(\'wg\')">导出配置</button><button class="btn" onclick="action(\'wg\',\'down\')">停止</button><button class="btn" onclick="action(\'wg\',\'up\')">启动</button></div>';
+  wh+='<div class="f-row hidden" id="wg-add"><input placeholder="公钥" id="wg-pk"><input placeholder="IP (10.0.0.5/32)" id="wg-ip"><button class="btn" onclick="action(\'wg\',\'add\')">确认</button><button class="btn" onclick="showWGF(\'\')">取消</button></div>';
+  wh+='<div class="cfg" id="wg-cfg"></div>';
+  $('b-wg').innerHTML=wh;
+  if(d.wg_config){$('wg-cfg').textContent=d.wg_config}
 
   // Shadowsocks
   var ss=d.ss_config||{};
-  $('d-ss').className='dot '+(d.ss_count?'d0':'d1');
-  $('s-ss').textContent=(d.ss_count||0)+' 活跃连接';
-  $('ss-port').textContent=ss.Port||'--';
-  $('ss-method').textContent=ss.Method||'--';
-  $('ss-pass').textContent=ss.Pass||'--';
-  $('ss-count').textContent=(d.ss_count||0);
-  var ch='';
+  $('s-ss').innerHTML=''+d.ss_count+' 连接';
+  var sh='<div class="row"><span class="lbl">端口</span><span>'+ss.Port+'</span></div>';
+  sh+='<div class="row"><span class="lbl">加密</span><span>'+ss.Method+'</span></div>';
+  sh+='<div class="row"><span class="lbl">密码</span><span>'+ss.Pass+'</span></div>';
   var conns=d.ss_conns||[];
-  for(var i=0;i<conns.length;i++){ch+='<div class="row"><span>'+esc(conns[i])+'</span><span class="tag t0">已连接</span></div>'}
-  $('ss-list').innerHTML=ch||'';
+  if(conns.length){
+    sh+='<div style="margin-top:8px;font-size:12px;color:var(--muted)">客户端</div>';
+    for(var i=0;i<conns.length;i++){sh+='<div class="row"><span>'+esc(conns[i])+'</span><span class="tag t0">已连接</span></div>'}
+  }
+  sh+='<div class="btn-group"><button class="btn" onclick="dload(\'ss\')">导出配置</button><button class="btn" onclick="action(\'ss\',\'down\')">停止</button><button class="btn" onclick="action(\'ss\',\'up\')">启动</button></div>';
+  $('b-ss').innerHTML=sh;
 }
 
 function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML}
 
 async function refresh(){
-  try{
-    var r=await fetch('/dashboard/data');if(!r.ok)return;
-    var d=await r.json();render(d);
-  }catch(e){}
+  try{var r=await fetch('/dashboard/data');if(r.ok)render(await r.json())}catch(e){}
 }
 
 function showWGF(v){if(v){$('wg-pk').value='';$('wg-ip').value=''}$('wg-add').classList.toggle('hidden',!v)}
 
 function dload(t){
   var el;
-  if(t==='wg'){el=$('wg-cfg');el.style.display='block'}
+  if(t==='wg'){el=$('wg-cfg');el.style.display=el.style.display==='block'?'none':'block';return}
   if(t==='ss'){
-    var c=($('ss-port').textContent)+':'+($('ss-method').textContent);
-    el=document.createElement('pre');el.textContent='端口: '+c+'\n密码: ****';
-    document.body.appendChild(el);
+    el=document.getElementById('ss-dl-el');
+    if(!el){el=document.createElement('pre');el.id='ss-dl-el';el.style.cssText='position:fixed;top:-9999px';document.body.appendChild(el)}
+    var c=(ssC||{}).Port+':'+(ssC||{}).Method;
+    el.textContent='端口: '+c+'\n密码: ****';
   }
   if(!el)return;
   var b=new Blob([el.textContent],{type:'text/plain'});
   var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=(t==='wg'?'wg0.conf':'ss-config.txt');a.click();
-  if(t==='ss')document.body.removeChild(el);
 }
+var ssC={};
 
 async function action(svc,act,pubkey){
-  if(act==='remove'&&!confirm('确认删除此节点？'))return;
-  if(act==='up'||act==='down'){if(!confirm('确认'+(act==='up'?'启动':'停止')+'服务？'))return}
-  var fd=new FormData();
-  fd.append('action',act);
+  if(act==='remove'&&!confirm('确认删除？'))return;
+  if((act==='up'||act==='down')&&!confirm('确认'+(act==='up'?'启动':'停止')+'？'))return;
+  var fd=new FormData();fd.append('action',act);
   if(pubkey)fd.append('pubkey',pubkey);
   if(act==='add'){fd.append('pubkey',$('wg-pk').value);fd.append('ip',$('wg-ip').value)}
-  try{
-    await fetch('/dashboard/'+svc,{method:'POST',body:fd});
-    setTimeout(refresh,500);
-    if(act==='add')showWGF('');
-  }catch(e){}
+  try{await fetch('/dashboard/'+svc,{method:'POST',body:fd});setTimeout(refresh,500);if(act==='add')showWGF('')}catch(e){}
 }
 
 render(D);
-refresh();
 setInterval(refresh,5000);
 </script></body></html>`
