@@ -11,7 +11,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 
 FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates curl tzdata && \
+    ca-certificates curl tzdata wireguard-tools && \
     rm -rf /var/lib/apt/lists/*
 RUN groupadd --system --gid 10001 clipbridge && \
     useradd --system --uid 10001 --gid clipbridge --home /var/lib/clipbridge clipbridge

@@ -13,7 +13,7 @@ import (
 	"net"
 	"net/http"
 	"net/mail"
-	"os/exec"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -427,22 +427,9 @@ func (a *API) proxyClash(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) proxyWireGuard(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), 4*time.Second)
-	defer cancel()
-	cmd := exec.CommandContext(ctx, "wg", "show")
-	out, err := cmd.Output()
-	if err != nil {
-		a.write(w, http.StatusOK, map[string]any{"online": false, "error": err.Error()})
-		return
-	}
-	lines := 0
-	for _, b := range out {
-		if b == '\n' { lines++ }
-	}
-	a.write(w, http.StatusOK, map[string]any{
-		"online":       true,
-		"interface_count": lines,
-	})
+	_, err := os.Stat("/sys/class/net/wg0")
+	online := err == nil
+	a.write(w, http.StatusOK, map[string]any{"online": online})
 }
 
 func (a *API) requireAuth(next http.Handler) http.Handler {

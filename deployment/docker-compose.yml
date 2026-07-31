@@ -15,6 +15,7 @@ services:
       CLIPBRIDGE_MAX_QUEUED_BYTES: "${CLIPBRIDGE_MAX_QUEUED_BYTES:-10485760}"
     volumes:
       - ./data:/var/lib/clipbridge
+      - /sys/class/net:/sys/class/net:ro
     ports:
       - "127.0.0.1:${CLIPBRIDGE_HTTP_PORT:-8080}:8080"
     healthcheck:
