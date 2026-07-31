@@ -16,6 +16,7 @@ services:
     volumes:
       - ./data:/var/lib/clipbridge
       - /sys/class/net:/sys/class/net:ro
+      - /proc:/host-proc:ro
     ports:
       - "127.0.0.1:${CLIPBRIDGE_HTTP_PORT:-8080}:8080"
     healthcheck:

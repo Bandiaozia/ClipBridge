@@ -10,13 +10,17 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"math"
 	"net"
 	"net/http"
 	"net/mail"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"golang.org/x/sys/unix"
 
 	"github.com/clipbridge/clipbridge/relay-server/internal/auth"
 	"github.com/clipbridge/clipbridge/relay-server/internal/model"
@@ -54,6 +58,7 @@ func New(store *service.Store, tokens *auth.TokenManager, hub *clipws.Hub,
 	mux.HandleFunc("GET /health", api.health)
 	mux.HandleFunc("GET /ready", api.ready)
 	mux.HandleFunc("GET /stats", api.stats)
+	mux.HandleFunc("GET /stats/system", api.statsSystem)
 	mux.HandleFunc("GET /proxy/shadowsocks", api.proxyShadowsocks)
 	mux.HandleFunc("GET /proxy/wireguard", api.proxyWireGuard)
 	mux.HandleFunc("POST /api/v1/auth/register", api.register)
@@ -394,6 +399,55 @@ func (a *API) stats(w http.ResponseWriter, _ *http.Request) {
 		"devices":        hubStats.Devices,
 		"uptime_seconds": int64(time.Since(a.startedAt).Seconds()),
 	})
+}
+
+func (a *API) statsSystem(w http.ResponseWriter, r *http.Request) {
+	cpu := readCPU("/host-proc/stat")
+	memTotal, memAvail := readMem("/host-proc/meminfo")
+	var diskTotal, diskAvail uint64
+	var st unix.Statfs_t
+	if unix.Statfs("/var/lib/clipbridge", &st) == nil {
+		diskTotal = st.Blocks * uint64(st.Bsize)
+		diskAvail = st.Bavail * uint64(st.Bsize)
+	}
+	a.write(w, http.StatusOK, map[string]any{
+		"cpu_percent":   cpu,
+		"mem_total_mb":  memTotal / 1024,
+		"mem_avail_mb":  memAvail / 1024,
+		"disk_total_gb": float64(diskTotal) / 1e9,
+		"disk_avail_gb": float64(diskAvail) / 1e9,
+	})
+}
+
+func readCPU(path string) float64 {
+	data, err := os.ReadFile(path)
+	if err != nil { return 0 }
+	// parse first line: cpu  user nice system idle iowait ...
+	line := strings.SplitN(string(data), "\n", 2)[0]
+	if !strings.HasPrefix(line, "cpu ") { return 0 }
+	fields := strings.Fields(line)[1:]
+	if len(fields) < 4 { return 0 }
+	nums := make([]int64, len(fields))
+	for i, f := range fields { nums[i], _ = strconv.ParseInt(f, 10, 64); _ = nums[i] }
+	idle := nums[3]
+	total := nums[0] + nums[1] + nums[2] + nums[3] + nums[4] + nums[5] + nums[6] + nums[7]
+	if total == 0 { return 0 }
+	used := total - idle
+	return math.Round(float64(used)/float64(total)*1000) / 10
+}
+
+func readMem(path string) (totalKB, availKB int64) {
+	data, err := os.ReadFile(path)
+	if err != nil { return 0, 0 }
+	for _, line := range strings.Split(string(data), "\n") {
+		if strings.HasPrefix(line, "MemTotal:") {
+			fmt.Sscanf(line, "MemTotal: %d kB", &totalKB)
+		}
+		if strings.HasPrefix(line, "MemAvailable:") {
+			fmt.Sscanf(line, "MemAvailable: %d kB", &availKB)
+		}
+	}
+	return
 }
 
 func (a *API) proxyShadowsocks(w http.ResponseWriter, r *http.Request) {

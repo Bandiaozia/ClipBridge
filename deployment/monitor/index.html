@@ -14,6 +14,7 @@
     --green: #2dd4bf;
     --red: #f87171;
     --amber: #fbbf24;
+    --bar-bg: #1e1e2e;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -25,79 +26,86 @@
     justify-content: center;
     padding: 80px 24px 48px;
   }
-  .main { width: 100%; max-width: 640px; }
-  h1 {
-    font-size: 22px;
-    font-weight: 500;
-    letter-spacing: -0.3px;
-  }
-  .sub {
-    color: var(--muted);
-    font-size: 13px;
-    margin-top: 4px;
-    margin-bottom: 36px;
-  }
+  .main { width: 100%; max-width: 680px; }
+  h1 { font-size: 22px; font-weight: 500; letter-spacing: -0.3px; }
+  .sub { color: var(--muted); font-size: 13px; margin: 4px 0 28px; }
+  .section { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; margin: 32px 0 10px; }
 
   .row {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 18px 20px;
-    margin-bottom: 8px;
+    display: flex; align-items: center; gap: 14px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 18px 20px; margin-bottom: 8px;
     transition: border-color 0.2s;
   }
   .row:hover { border-color: #2a2a3e; }
-  .dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-  .dot.up   { background: var(--green); box-shadow: 0 0 6px rgba(45,212,191,0.4); }
-  .dot.down { background: var(--red);   box-shadow: 0 0 6px rgba(248,113,113,0.4); }
-  .dot.warn { background: var(--amber); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dot.up   { background: var(--green); box-shadow: 0 0 8px rgba(45,212,191,0.5); }
+  .dot.down { background: var(--red);   box-shadow: 0 0 8px rgba(248,113,113,0.5); }
   .info { flex: 1; min-width: 0; }
   .info .name { font-size: 15px; font-weight: 500; }
   .info .desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
   .meta { text-align: right; flex-shrink: 0; }
   .meta div { font-size: 12px; color: var(--muted); line-height: 1.6; }
 
-  .stats {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    margin-bottom: 8px;
+  .gauges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 8px; }
+  .gauge {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px; text-align: center;
   }
+  .gauge .val { font-size: 22px; font-weight: 500; }
+  .gauge .lbl { font-size: 11px; color: var(--muted); margin-top: 3px; }
+  .gauge .bar {
+    margin-top: 10px; height: 4px; border-radius: 2px; background: var(--bar-bg); overflow: hidden;
+  }
+  .gauge .bar div {
+    height: 100%; border-radius: 2px;
+    transition: width 0.8s ease;
+  }
+
+  .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
   .stat {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 16px;
-    text-align: center;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px; text-align: center;
   }
   .stat .val { font-size: 20px; font-weight: 500; }
   .stat .lbl { font-size: 11px; color: var(--muted); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
 
-  .footer {
-    text-align: center;
-    color: var(--muted);
-    font-size: 11px;
-    margin-top: 28px;
-  }
+  .footer { text-align: center; color: var(--muted); font-size: 11px; margin-top: 32px; }
 </style>
 </head>
 <body>
 <div class="main">
   <h1>Dashboard</h1>
-  <p class="sub">45.138.70.194</p>
+  <p class="sub">clipbridge.ccttkx.xyz</p>
+
+  <!-- System -->
+  <div class="section">System</div>
+  <div class="gauges">
+    <div class="gauge">
+      <div class="val" id="cpu">--</div>
+      <div class="lbl">CPU</div>
+      <div class="bar"><div style="width:0" id="cpu-bar"></div></div>
+    </div>
+    <div class="gauge">
+      <div class="val" id="mem">--</div>
+      <div class="lbl">Memory</div>
+      <div class="bar"><div style="width:0" id="mem-bar"></div></div>
+    </div>
+    <div class="gauge">
+      <div class="val" id="disk">--</div>
+      <div class="lbl">Disk Free</div>
+      <div class="bar"><div style="width:0" id="disk-bar"></div></div>
+    </div>
+  </div>
+
+  <!-- Services -->
+  <div class="section">Services</div>
 
   <div class="row">
     <div class="dot" id="b-dot"></div>
     <div class="info">
       <div class="name">ClipBridge</div>
-      <div class="desc">E2E encrypted clipboard relay</div>
+      <div class="desc">E2E clipboard relay</div>
     </div>
     <div class="meta">
       <div id="b-uptime">--</div>
@@ -105,38 +113,27 @@
     </div>
   </div>
 
-  <div class="stats">
-    <div class="stat">
-      <div class="val" id="b-users">--</div>
-      <div class="lbl">Users</div>
-    </div>
-    <div class="stat">
-      <div class="val" id="b-devices">--</div>
-      <div class="lbl">Devices</div>
-    </div>
+  <div class="stats-row">
+    <div class="stat"><div class="val" id="b-users">--</div><div class="lbl">Users</div></div>
+    <div class="stat"><div class="val" id="b-devices">--</div><div class="lbl">Devices</div></div>
   </div>
 
   <div class="row">
-    <div class="dot" id="c-dot"></div>
+    <div class="dot" id="s-dot"></div>
     <div class="info">
       <div class="name">Shadowsocks</div>
-      <div class="desc">Proxy service</div>
+      <div class="desc">Proxy :8388</div>
     </div>
-    <div class="meta">
-      <div id="c-uptime">--</div>
-      <div id="c-latency">--</div>
-    </div>
+    <div class="meta"><div id="s-latency">--</div></div>
   </div>
 
   <div class="row">
     <div class="dot" id="w-dot"></div>
     <div class="info">
       <div class="name">WireGuard</div>
-      <div class="desc">VPN tunnel</div>
+      <div class="desc">VPN wg0</div>
     </div>
-    <div class="meta">
-      <div id="w-latency">--</div>
-    </div>
+    <div class="meta"><div id="w-latency">--</div></div>
   </div>
 
   <div class="footer">Refreshed <span id="tick">--</span></div>
@@ -155,23 +152,49 @@ function uptime(s) {
   return m + 'm';
 }
 
+function barColor(pct) {
+  if (pct > 80) return 'var(--red)';
+  if (pct > 60) return 'var(--amber)';
+  return 'var(--green)';
+}
+
 async function get(path) {
   const t0 = performance.now();
   try {
     const r = await fetch(BASE + path, { signal: AbortSignal.timeout(5000) });
-    const data = await r.json();
-    return { ok: true, ms: Math.round(performance.now() - t0), data };
+    return { ok: true, ms: Math.round(performance.now() - t0), data: await r.json() };
   } catch {
     return { ok: false, ms: Math.round(performance.now() - t0) };
   }
 }
 
 async function tick() {
-  const [b, c, w] = await Promise.all([
+  const [sys, b, s, w] = await Promise.all([
+    get('/stats/system'),
     get('/stats'),
     get('/proxy/shadowsocks'),
     get('/proxy/wireguard'),
   ]);
+
+  // System
+  if (sys.ok) {
+    const cpu = sys.data.cpu_percent || 0;
+    const memUsed = sys.data.mem_total_mb - (sys.data.mem_avail_mb || 0);
+    const memPct = sys.data.mem_total_mb ? (memUsed / sys.data.mem_total_mb * 100) : 0;
+    const diskPct = sys.data.disk_total_gb ? ((sys.data.disk_total_gb - sys.data.disk_avail_gb) / sys.data.disk_total_gb * 100) : 0;
+
+    document.getElementById('cpu').textContent = cpu + '%';
+    document.getElementById('cpu-bar').style.width = cpu + '%';
+    document.getElementById('cpu-bar').style.background = barColor(cpu);
+
+    document.getElementById('mem').textContent = Math.round(memUsed) + ' / ' + sys.data.mem_total_mb + ' MB';
+    document.getElementById('mem-bar').style.width = memPct + '%';
+    document.getElementById('mem-bar').style.background = barColor(memPct);
+
+    document.getElementById('disk').textContent = (sys.data.disk_avail_gb || 0).toFixed(0) + ' GB';
+    document.getElementById('disk-bar').style.width = (100 - diskPct) + '%';
+    document.getElementById('disk-bar').style.background = barColor(100 - diskPct);
+  }
 
   // ClipBridge
   const bd = document.getElementById('b-dot');
@@ -189,14 +212,13 @@ async function tick() {
     document.getElementById('b-devices').textContent = '--';
   }
 
-  // Clash
-  document.getElementById('c-dot').className = 'dot ' + (c.ok && c.data.online ? 'up' : 'down');
-  document.getElementById('c-uptime').textContent = c.ok && c.data.online ? uptime(c.data.uptime_seconds) || '--' : 'offline';
-  document.getElementById('c-latency').textContent = c.ms ? c.ms + 'ms' : '--';
+  // Shadowsocks
+  document.getElementById('s-dot').className = 'dot ' + (s.ok && s.data.online ? 'up' : 'down');
+  document.getElementById('s-latency').textContent = s.ms ? s.ms + 'ms' : '--';
 
   // WireGuard
   document.getElementById('w-dot').className = 'dot ' + (w.ok && w.data.online ? 'up' : 'down');
-  document.getElementById('w-latency').textContent = w.ok ? w.ms + 'ms' : '--';
+  document.getElementById('w-latency').textContent = w.ms ? w.ms + 'ms' : '--';
 
   document.getElementById('tick').textContent = new Date().toLocaleTimeString('zh-CN');
 }
