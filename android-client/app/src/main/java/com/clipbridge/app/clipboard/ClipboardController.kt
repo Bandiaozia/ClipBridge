@@ -69,7 +69,7 @@ class ClipboardController(context: Context) {
     }
 
     @Synchronized
-    private fun handleChangedText(text: String) {
+    fun handleChangedText(text: String) {
         if (text.isBlank()) return
         val hash = hash(text)
         val now = System.currentTimeMillis()
