@@ -604,11 +604,11 @@ func (a *API) dashShadowsocks(w http.ResponseWriter, r *http.Request) {
 	seen := map[string]bool{}
 	data, _ := os.ReadFile("/host-proc/net/tcp")
 	for _, line := range strings.Split(string(data), "\n") {
-		if !strings.Contains(line, " 20C4 ") { continue } // port 8388 = 0x20C4
+		if !strings.Contains(line, ":20C4 ") { continue } // port 8388 = 0x20C4
 		parts := strings.Fields(line)
-		if len(parts) < 3 { continue }
+		if len(parts) < 4 { continue }
 		if parts[3] != "01" { continue } // ESTABLISHED
-		hexIP := parts[1]
+		hexIP := parts[2] // remote address
 		if idx := strings.LastIndex(hexIP, ":"); idx > 0 { hexIP = hexIP[:idx] }
 		ip := parseHexIP(hexIP)
 		if ip == "" || seen[ip] { continue }
