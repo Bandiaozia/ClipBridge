@@ -54,7 +54,7 @@ func New(store *service.Store, tokens *auth.TokenManager, hub *clipws.Hub,
 	mux.HandleFunc("GET /health", api.health)
 	mux.HandleFunc("GET /ready", api.ready)
 	mux.HandleFunc("GET /stats", api.stats)
-	mux.HandleFunc("GET /proxy/clash", api.proxyClash)
+	mux.HandleFunc("GET /proxy/shadowsocks", api.proxyShadowsocks)
 	mux.HandleFunc("GET /proxy/wireguard", api.proxyWireGuard)
 	mux.HandleFunc("POST /api/v1/auth/register", api.register)
 	mux.HandleFunc("POST /api/v1/auth/login", api.login)
@@ -396,34 +396,14 @@ func (a *API) stats(w http.ResponseWriter, _ *http.Request) {
 	})
 }
 
-func (a *API) proxyClash(w http.ResponseWriter, r *http.Request) {
+func (a *API) proxyShadowsocks(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 4*time.Second)
 	defer cancel()
-	req, _ := http.NewRequestWithContext(ctx, "GET", "http://127.0.0.1:9090/version", nil)
+	req, _ := http.NewRequestWithContext(ctx, "GET", "http://172.17.0.1:8388", nil)
 	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		a.write(w, http.StatusOK, map[string]any{"online": false, "error": err.Error()})
-		return
-	}
-	defer resp.Body.Close()
-	body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
-	var clashInfo map[string]any
-	json.Unmarshal(body, &clashInfo)
-	a.write(w, http.StatusOK, map[string]any{
-		"online":   true,
-		"version":  clashInfo["version"],
-		"uptime_seconds": func() int64 {
-			req2, _ := http.NewRequestWithContext(ctx, "GET", "http://127.0.0.1:9090", nil)
-			resp2, err := http.DefaultClient.Do(req2)
-			if err != nil || resp2.StatusCode != 200 { return 0 }
-			defer resp2.Body.Close()
-			body2, _ := io.ReadAll(io.LimitReader(resp2.Body, 4096))
-			var meta map[string]any
-			json.Unmarshal(body2, &meta)
-			if up, ok := meta["upTime"].(float64); ok { return int64(up) }
-			return 0
-		}(),
-	})
+	online := err == nil && resp.StatusCode < 500
+	if resp != nil { resp.Body.Close() }
+	a.write(w, http.StatusOK, map[string]any{"online": online})
 }
 
 func (a *API) proxyWireGuard(w http.ResponseWriter, r *http.Request) {
