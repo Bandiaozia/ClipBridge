@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/rand"
 	"database/sql"
+	_ "embed"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -32,6 +33,9 @@ import (
 )
 
 type contextKey int
+
+//go:embed dashboard.html
+var dashboardHTML string
 
 const (
 	claimsKey contextKey = iota
@@ -68,7 +72,8 @@ func New(store *service.Store, tokens *auth.TokenManager, hub *clipws.Hub,
 	mux.HandleFunc("GET /stats/system", api.statsSystem)
 	mux.HandleFunc("GET /proxy/shadowsocks", api.proxyShadowsocks)
 	mux.HandleFunc("GET /proxy/wireguard", api.proxyWireGuard)
-	// Dashboard (需要 token 认证)
+	// Dashboard
+	mux.HandleFunc("GET /dashboard", api.dashPage)
 	mux.HandleFunc("POST /dashboard/auth", api.dashAuth)
 	mux.HandleFunc("GET /dashboard/devices", api.dashDevices)
 	mux.HandleFunc("GET /dashboard/wireguard", api.dashWireGuard)
@@ -479,6 +484,11 @@ func (a *API) proxyWireGuard(w http.ResponseWriter, r *http.Request) {
 }
 
 // -- Dashboard handlers --
+
+func (a *API) dashPage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(dashboardHTML))
+}
 
 func (a *API) dashAuth(w http.ResponseWriter, r *http.Request) {
 	var body struct{ Password string }

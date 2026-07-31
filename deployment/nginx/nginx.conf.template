@@ -45,33 +45,11 @@ server {
         proxy_buffering off;
     }
 
-    location /dashboard/auth {
-        proxy_pass http://relay:8080;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header Authorization $http_authorization;
-    }
-    location /dashboard/devices {
-        proxy_pass http://relay:8080;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header Authorization $http_authorization;
-    }
-    location /dashboard/wireguard {
-        proxy_pass http://relay:8080;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header Authorization $http_authorization;
-    }
-    location /dashboard/shadowsocks {
-        proxy_pass http://relay:8080;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header Authorization $http_authorization;
-    }
     location /dashboard {
-        alias /usr/share/nginx/html/dashboard;
-        index index.html;
+        proxy_pass http://relay:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
     }
 
     location / {
