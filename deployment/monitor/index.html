@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --border: #1e1e2e;
+    --text: #e4e4ed;
+    --muted: #6b6b7b;
+    --green: #2dd4bf;
+    --red: #f87171;
+    --amber: #fbbf24;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 80px 24px 48px;
+  }
+  .main { width: 100%; max-width: 640px; }
+  h1 {
+    font-size: 22px;
+    font-weight: 500;
+    letter-spacing: -0.3px;
+  }
+  .sub {
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 4px;
+    margin-bottom: 36px;
+  }
+
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-bottom: 8px;
+    transition: border-color 0.2s;
+  }
+  .row:hover { border-color: #2a2a3e; }
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .dot.up   { background: var(--green); box-shadow: 0 0 6px rgba(45,212,191,0.4); }
+  .dot.down { background: var(--red);   box-shadow: 0 0 6px rgba(248,113,113,0.4); }
+  .dot.warn { background: var(--amber); }
+  .info { flex: 1; min-width: 0; }
+  .info .name { font-size: 15px; font-weight: 500; }
+  .info .desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .meta { text-align: right; flex-shrink: 0; }
+  .meta div { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+  .stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+  }
+  .stat .val { font-size: 20px; font-weight: 500; }
+  .stat .lbl { font-size: 11px; color: var(--muted); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 11px;
+    margin-top: 28px;
+  }
+</style>
+</head>
+<body>
+<div class="main">
+  <h1>Dashboard</h1>
+  <p class="sub">45.138.70.194</p>
+
+  <div class="row">
+    <div class="dot" id="b-dot"></div>
+    <div class="info">
+      <div class="name">ClipBridge</div>
+      <div class="desc">E2E encrypted clipboard relay</div>
+    </div>
+    <div class="meta">
+      <div id="b-uptime">--</div>
+      <div id="b-latency">--</div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="val" id="b-users">--</div>
+      <div class="lbl">Users</div>
+    </div>
+    <div class="stat">
+      <div class="val" id="b-devices">--</div>
+      <div class="lbl">Devices</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="dot" id="c-dot"></div>
+    <div class="info">
+      <div class="name">Clash</div>
+      <div class="desc">Proxy service</div>
+    </div>
+    <div class="meta">
+      <div id="c-uptime">--</div>
+      <div id="c-latency">--</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="dot" id="w-dot"></div>
+    <div class="info">
+      <div class="name">WireGuard</div>
+      <div class="desc">VPN tunnel</div>
+    </div>
+    <div class="meta">
+      <div id="w-latency">--</div>
+    </div>
+  </div>
+
+  <div class="footer">Refreshed <span id="tick">--</span></div>
+</div>
+
+<script>
+const BASE = 'http://45.138.70.194:8080';
+
+function uptime(s) {
+  if (!s || s <= 0) return '--';
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  if (d) return d + 'd ' + h + 'h';
+  if (h) return h + 'h ' + m + 'm';
+  return m + 'm';
+}
+
+async function get(path) {
+  const t0 = performance.now();
+  try {
+    const r = await fetch(BASE + path, { signal: AbortSignal.timeout(5000) });
+    const data = await r.json();
+    return { ok: true, ms: Math.round(performance.now() - t0), data };
+  } catch {
+    return { ok: false, ms: Math.round(performance.now() - t0) };
+  }
+}
+
+async function tick() {
+  const [b, c, w] = await Promise.all([
+    get('/stats'),
+    get('/proxy/clash'),
+    get('/proxy/wireguard'),
+  ]);
+
+  // ClipBridge
+  const bd = document.getElementById('b-dot');
+  if (b.ok) {
+    bd.className = 'dot up';
+    document.getElementById('b-uptime').textContent = uptime(b.data.uptime_seconds) || '--';
+    document.getElementById('b-latency').textContent = b.ms + 'ms';
+    document.getElementById('b-users').textContent = b.data.users ?? '--';
+    document.getElementById('b-devices').textContent = b.data.devices ?? '--';
+  } else {
+    bd.className = 'dot down';
+    document.getElementById('b-uptime').textContent = 'offline';
+    document.getElementById('b-latency').textContent = '--';
+    document.getElementById('b-users').textContent = '--';
+    document.getElementById('b-devices').textContent = '--';
+  }
+
+  // Clash
+  document.getElementById('c-dot').className = 'dot ' + (c.ok && c.data.online ? 'up' : 'down');
+  document.getElementById('c-uptime').textContent = c.ok && c.data.online ? uptime(c.data.uptime_seconds) || '--' : 'offline';
+  document.getElementById('c-latency').textContent = c.ms ? c.ms + 'ms' : '--';
+
+  // WireGuard
+  document.getElementById('w-dot').className = 'dot ' + (w.ok && w.data.online ? 'up' : 'down');
+  document.getElementById('w-latency').textContent = w.ok ? w.ms + 'ms' : '--';
+
+  document.getElementById('tick').textContent = new Date().toLocaleTimeString('zh-CN');
+}
+
+tick();
+setInterval(tick, 5000);
+</script>
+</body>
+</html>
