@@ -506,6 +506,7 @@ func (a *API) dashAuth(w http.ResponseWriter, r *http.Request) {
 func (a *API) dashCheck(r *http.Request) bool {
 	tok := r.Header.Get("Authorization")
 	tok = strings.TrimPrefix(tok, "Bearer ")
+	if tok == "" { tok = r.URL.Query().Get("token") }
 	if tok == "" { return false }
 	a.dashboardMu.Lock()
 	exp, ok := a.dashboardSecrets[tok]

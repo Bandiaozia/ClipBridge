@@ -214,11 +214,12 @@ if (TOKEN) {
 }
 document.getElementById('pw').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
 
-function hdr() { return { headers: { Authorization: 'Bearer ' + TOKEN } }; }
 async function get(path) {
   const t0 = performance.now();
+  const sep = path.includes('?') ? '&' : '?';
+  const url = TOKEN ? path + sep + 'token=' + TOKEN : path;
   try {
-    const r = await fetch(path, Object.assign({ signal: AbortSignal.timeout(5000) }, hdr()));
+    const r = await fetch(url, { signal: AbortSignal.timeout(5000) });
     return { ok: true, ms: Math.round(performance.now() - t0), data: await r.json() };
   } catch { return { ok: false, ms: Math.round(performance.now() - t0) }; }
 }
