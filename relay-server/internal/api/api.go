@@ -595,44 +595,29 @@ func (a *API) dashShadowsocks(w http.ResponseWriter, r *http.Request) {
 	var ssCfg map[string]any
 	json.Unmarshal(cfg, &ssCfg)
 
-	// 读活跃连接（从 host proc）
+	// 读活跃连接（宿主机 cron 每分钟写入 /tmp/ss-connections）
 	type connInfo struct {
 		Client string `json:"client"`
 		Status string `json:"status"`
 	}
 	conns := []connInfo{}
-	seen := map[string]bool{}
-	data, _ := os.ReadFile("/host-proc/net/tcp")
-	for _, line := range strings.Split(string(data), "\n") {
-		if !strings.Contains(line, ":20C4 ") { continue } // port 8388 = 0x20C4
-		parts := strings.Fields(line)
-		if len(parts) < 4 { continue }
-		if parts[3] != "01" { continue } // ESTABLISHED
-		hexIP := parts[2] // remote address
-		if idx := strings.LastIndex(hexIP, ":"); idx > 0 { hexIP = hexIP[:idx] }
-		ip := parseHexIP(hexIP)
-		if ip == "" || seen[ip] { continue }
-		seen[ip] = true
-		conns = append(conns, connInfo{Client: ip, Status: "已连接"})
+	data, _ := os.ReadFile("/tmp/ss-connections")
+	for _, line := range strings.Split(strings.TrimSpace(string(data)), "\n") {
+		ip := strings.TrimSpace(line)
+		if ip != "" {
+			conns = append(conns, connInfo{Client: ip, Status: "已连接"})
+		}
 	}
+	countData, _ := os.ReadFile("/tmp/ss-count")
+	connCount, _ := strconv.Atoi(strings.TrimSpace(string(countData)))
 
 	// 脱敏密码
 	if pw, ok := ssCfg["password"].(string); ok { ssCfg["password"] = pw[:4] + "****" }
 	a.write(w, http.StatusOK, map[string]any{
 		"config":      ssCfg,
 		"connections": conns,
-		"conn_count":  len(conns),
+		"conn_count":  connCount,
 	})
-}
-
-func parseHexIP(hex string) string {
-	if len(hex) != 8 { return "" }
-	b := make([]byte, 4)
-	for i := 0; i < 4; i++ {
-		v, _ := strconv.ParseUint(hex[i*2:i*2+2], 16, 8)
-		b[3-i] = byte(v) // little endian
-	}
-	return fmt.Sprintf("%d.%d.%d.%d", b[0], b[1], b[2], b[3])
 }
 
 func hideKey(s, key string) string {

@@ -21,6 +21,8 @@ services:
       - /etc/wireguard:/etc/wireguard:ro
       - /etc/shadowsocks-libev:/etc/shadowsocks-libev:ro
       - /tmp/wg-dump:/tmp/wg-dump:ro
+      - /tmp/ss-connections:/tmp/ss-connections:ro
+      - /tmp/ss-count:/tmp/ss-count:ro
     ports:
       - "127.0.0.1:${CLIPBRIDGE_HTTP_PORT:-8080}:8080"
     healthcheck:
